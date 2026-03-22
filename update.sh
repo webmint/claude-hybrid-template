@@ -1,5 +1,5 @@
 #!/bin/bash
-# Update a project that was installed from claude-hybrid-template.
+# Update a project that was installed from AIDevTeamForge.
 #
 # Usage:
 #   ./update.sh /path/to/target-project
@@ -89,7 +89,7 @@ else
 fi
 
 # ── Version info ───────────────────────────────────────────────────────────
-header "Claude Hybrid Template — Update"
+header "AIDevTeamForge — Update"
 info "Template version: ${BOLD}$TEMPLATE_VERSION${NC}"
 info "Target version:   ${BOLD}$TARGET_VERSION${NC}"
 info "Target path:      $TARGET_DIR"

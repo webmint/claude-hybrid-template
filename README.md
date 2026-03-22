@@ -1,4 +1,4 @@
-# Claude Hybrid Template
+# AIDevTeamForge
 
 A spec-driven development template for Claude Code that combines structured specification workflow with enforced execution quality.
 
@@ -12,10 +12,10 @@ Every phase transition requires explicit user approval. No step can be skipped.
 
 ```bash
 # Standard installation
-/path/to/claude-hybrid-template/install.sh /path/to/your-project
+/path/to/AIDevTeamForge/install.sh /path/to/your-project
 
 # Wrapper mode (for client-invisible AI usage)
-/path/to/claude-hybrid-template/install.sh --wrapper /path/to/workspace inner-project-folder
+/path/to/AIDevTeamForge/install.sh --wrapper /path/to/workspace inner-project-folder
 ```
 
 This copies `.claude/`, `specs/`, `bugs/`, `scripts/`, `.mcp.json`, and `update.sh` into your project. It also writes `.claude/template-version` to track which version you're on. Then open it in Claude Code and run `/setup-wizard`.

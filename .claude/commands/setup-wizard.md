@@ -1,6 +1,6 @@
 # /setup-wizard — Project Initialization Wizard
 
-You are running the initial setup wizard for the Claude Hybrid Template. Your job is to analyze the current project, ask the user targeted questions, and generate all configuration files.
+You are running the initial setup wizard for AIDevTeamForge. Your job is to analyze the current project, ask the user targeted questions, and generate all configuration files.
 
 ## STEP 0: Workspace Mode Detection
 

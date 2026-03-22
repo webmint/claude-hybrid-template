@@ -1,6 +1,6 @@
 {
   "version": "1.8.0",
-  "description": "Manifest for claude-hybrid-template update system",
+  "description": "Manifest for AIDevTeamForge update system",
 
   "templateOwned": {
     "description": "Files 100% owned by the template — safe to overwrite on update",

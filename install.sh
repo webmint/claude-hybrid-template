@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install Claude Hybrid Template into a target project directory
+# Install AIDevTeamForge into a target project directory
 #
 # Usage:
 #   install.sh <target-directory>
@@ -58,7 +58,7 @@ if [ "$WRAPPER_MODE" = true ]; then
   fi
 fi
 
-echo "Installing Claude Hybrid Template into: $TARGET_DIR"
+echo "Installing AIDevTeamForge into: $TARGET_DIR"
 
 cp -r "$TEMPLATE_DIR/.claude" "$TARGET_DIR/"
 cp -r "$TEMPLATE_DIR/specs" "$TARGET_DIR/"
