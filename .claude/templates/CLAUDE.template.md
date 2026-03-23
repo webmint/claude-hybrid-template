@@ -36,9 +36,12 @@ This file provides guidance to Claude Code when working with code in this reposi
 ### Spec-Driven Development Flow
 
 ```
-/setup-wizard → /constitute → /onboard → /clarify → /specify → /plan → /breakdown → /execute-task → /verify
-   (once)         (once)       (once)    (optional)  (per feature)         (auto)      (per task)     (per task)
+/setup-wizard → /constitute → /onboard → /research → /clarify → /specify → /plan → /breakdown → /execute-task → /verify
+   (once)         (once)       (once)    (optional)  (optional)  (per feature)         (auto)      (per task)     (per task)
 ```
+
+### `/research "topic or idea"` (optional)
+Quick feasibility check for vague ideas. Investigates the codebase for related patterns, optionally researches external approaches (signal-based), and outputs a concise report to `specs/research/[topic-slug].md`. Does NOT create specs or modify code. Use before `/specify` when you're unsure whether an idea is viable or how it fits.
 
 ### `/clarify "feature description"` (optional)
 Scans requirements against 9 ambiguity categories, asks up to 5 multiple-choice questions. Saves decisions to `specs/[feature]/clarifications.md`. Use when requirements are vague.
@@ -146,6 +149,8 @@ If the refactoring grows beyond 5 files, recommends escalating to `/specify`.
 
 ```
 specs/
+  research/                    # Research reports (/research) — exploratory, pre-spec
+    topic-slug.md
   001-feature-name/            # Numbered feature directories
     spec.md                    # /specify output
     clarifications.md          # /clarify output (optional)

@@ -2,14 +2,15 @@
 
 ## What This Is
 
-A reusable spec-driven development template for Claude Code. Combines a structured intake flow (clarify → specify → plan → breakdown → execute → verify) with enforced quality gates, specialized agents, and automated hooks.
+A reusable spec-driven development template for Claude Code. Combines a structured intake flow (research → clarify → specify → plan → breakdown → execute → verify) with enforced quality gates, specialized agents, and automated hooks.
 
 ## What's Built
 
-### Commands (14 files in `.claude/commands/`)
+### Commands (15 files in `.claude/commands/`)
 - `setup-wizard.md` — Interactive project setup, auto-detects stack or interviews for greenfield
 - `constitute.md` — Generates constitution from codebase analysis (existing) or interview (greenfield)
 - `onboard.md` — Deep codebase scan for existing projects, generates comprehensive `docs/` via tech-writer agent
+- `research.md` — Quick feasibility check for vague ideas; investigates codebase for related patterns, signal-based external research, outputs report to `specs/research/`
 - `clarify.md` — Optional pre-step, 9 ambiguity categories, max 5 questions
 - `specify.md` — Creates feature specs with acceptance criteria; auto-creates `spec/NNN-short-desc` branch when on default branch
 - `plan.md` — Technical plan between spec and breakdown (architecture, data model, contracts); signal-based research evaluation; reads `docs/` for context; outputs Documentation Impact section

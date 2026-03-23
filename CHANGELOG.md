@@ -5,6 +5,17 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-03-23
+
+### Added
+- `/research` command — lightweight feasibility check for vague ideas before `/specify`
+  - Investigates the codebase for related patterns, code, and infrastructure
+  - Signal-based external research — only web searches when the idea involves new libraries, integrations, or unfamiliar tech
+  - Outputs a concise report to `specs/research/[topic-slug].md` with verdict, approaches, complexity assessment, and concrete next-step recommendation
+  - No code modifications, no branches, no commits — purely investigative
+  - Sits before `/clarify` in the workflow: `/research` (optional) → `/clarify` (optional) → `/specify`
+- `specs/research/` directory in storage rules for research report artifacts
+
 ## [1.10.0] - 2026-03-23
 
 ### Added
