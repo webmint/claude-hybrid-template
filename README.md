@@ -4,7 +4,7 @@ A spec-driven development template for Claude Code that combines structured spec
 
 ## Philosophy
 
-Your workflow's **hard gates, specialized agents, and automated hooks** as the foundation. Spec-kit's **structured intake** (clarify → specify → plan → tasks) layered on top for scoping quality.
+Your workflow's **hard gates, specialized agents, and automated hooks** as the foundation. Spec-kit's **structured intake** (research → clarify → specify → plan → tasks) layered on top for scoping quality.
 
 Every phase transition requires explicit user approval. No step can be skipped.
 
@@ -69,8 +69,8 @@ Requires `jq` for JSON merging (`brew install jq` on macOS, `apt install jq` on 
 ## Workflow
 
 ```
-/setup-wizard → /constitute → /onboard → /clarify → /specify → /plan → /breakdown → /execute-task → /verify
-   (once)         (once)       (once)    (optional)  (per feat)                      (per task/batch)  (per feat)
+/setup-wizard → /constitute → /onboard → /research → /clarify → /specify → /plan → /breakdown → /execute-task → /verify
+   (once)         (once)       (once)    (optional)  (optional)  (per feat)                      (per task/batch)  (per feat)
 
 /fix "bug description"        ← lightweight shortcut for small bugs (skips spec/plan/breakdown)
 /fix bugs/003-null-check.md  ← fix a reported bug from the backlog
@@ -87,6 +87,9 @@ Deep codebase analysis (existing projects) or preference-based interview (greenf
 
 ### Phase 1.5: `/onboard` (one-time, existing projects only)
 Deep codebase scan that generates comprehensive documentation in `docs/`. Delegates to the tech-writer agent, which uses subagents for large codebases to stay within context limits. Produces `overview.md`, `architecture.md`, `features/*.md`, and `api/*.md` — the knowledge base all agents read before executing tasks. Skip for greenfield projects (docs are built incrementally).
+
+### Phase 1.75: `/research "topic or idea"` (optional, per idea)
+Quick feasibility check for vague ideas. Investigates the codebase for related patterns, optionally researches external approaches (signal-based — only when the idea involves new libraries, integrations, or unfamiliar tech), and outputs a concise report to `specs/research/[topic-slug].md`. Does NOT create specs, modify code, or create branches. Use before `/specify` when you're unsure whether an idea is viable or how it fits the project's architecture.
 
 ### Phase 2: `/clarify "feature description"` (optional, per feature)
 Scans requirements against 9 ambiguity categories, asks up to 5 multiple-choice questions with recommendations. Saves to `specs/[feature]/clarifications.md`. Skip if requirements are already clear.
@@ -129,6 +132,8 @@ Lightweight documentation refresh that detects what source files changed since d
 
 ```
 specs/
+  research/                      # Research reports (/research) — exploratory, pre-spec
+    topic-slug.md
   001-user-auth/                 # Numbered feature directories
     spec.md                      # /specify output
     clarifications.md            # /clarify output (optional)

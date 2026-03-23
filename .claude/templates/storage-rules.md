@@ -9,6 +9,8 @@ bugs/
   NNN-short-description.md           # Bug reports (/report-bug or /verify triage)
 
 specs/
+  research/                        # Research reports (/research) — exploratory, pre-spec
+    topic-slug.md
   NNN-feature-name/                # One numbered directory per feature
     spec.md                        # Feature specification (/specify)
     clarifications.md              # Ambiguity resolutions (/clarify) — optional
@@ -112,6 +114,7 @@ Each task file (`specs/NNN-feature/tasks/NNN-title.md`) contains:
 ## File Lifecycle
 
 ```
+/research     → creates specs/research/topic-slug.md (exploratory, pre-spec)
 /clarify      → creates specs/NNN-name/clarifications.md (optional)
 /specify      → creates specs/NNN-name/spec.md
 /plan         → creates specs/NNN-name/plan.md (+ research.md, data-model.md, contracts.md if needed)
