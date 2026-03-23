@@ -2,6 +2,8 @@
 
 A spec-driven development template for Claude Code that combines structured specification workflow with enforced execution quality.
 
+Install it into any project — existing or greenfield — and get a full AI development lifecycle: from vague ideas through research, specifications, and technical plans to atomic task execution by specialized agents (architect, frontend/backend engineers, QA, code reviewer, and more). Every phase transition requires your explicit approval. Automated guardrails — type checking after every edit, build verification, self-repair loops, cross-task contract validation, and constitution enforcement — catch errors before they compound. A crash recovery system preserves partial work, and a wrapper mode lets you use it on client projects with zero AI traces in their repo.
+
 ## Philosophy
 
 Your workflow's **hard gates, specialized agents, and automated hooks** as the foundation. Spec-kit's **structured intake** (research → clarify → specify → plan → tasks) layered on top for scoping quality.
