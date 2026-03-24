@@ -27,6 +27,7 @@ The wizard will:
    - Detect your project structure (or interview you for greenfield projects)
    - Ask clarifying questions about your stack
    - Ask whether commits should include AI co-author attribution (default: no)
+   - Ask which model agents should use (default: opus)
    - Generate `CLAUDE.md`, `constitution.md`, agents, hooks, and memory
    - Remove the templates directory when done
 
@@ -58,16 +59,19 @@ When the template is improved, you can push updates to projects that already use
 
 | Category | What happens | Examples |
 |----------|-------------|----------|
-| **Template-owned** | Overwritten with latest version | Commands (`.claude/commands/`), templates (`.claude/templates/`), manifest, scripts |
-| **Section-merge** | Template sections updated, project sections preserved | `CLAUDE.md` — workflow commands, key rules, quality gates update; project overview, architecture, agent list preserved; user-added custom sections kept |
-| **Template-derived** | Updated with placeholder substitution | Agents (`.claude/agents/`) — template content updated, `{{FRAMEWORK}}` etc. replaced using `.claude/project-config.json` |
+| **Template-owned** | Overwritten with latest version | Commands (`.claude/commands/`), manifest, scripts |
+| **Three-way merge** | Template diff applied, all project customizations preserved | `CLAUDE.md`, Agents (`.claude/agents/`) — uses `git merge-file` with baselines to apply only what changed in the template |
 | **Project-owned** | Never touched | `constitution.md`, `.claude/project-config.json`, memory, specs, docs |
 | **Merge files** | Smart-merged (union of keys/lines) | `.mcp.json` (new servers added), `.gitignore` (new entries added) |
 | **Copy if missing** | Copied only if absent | New files added to the template that projects don't have yet |
 
 ### Project config
 
-`/setup-wizard` writes `.claude/project-config.json` with all template variable values (framework, language, architecture, etc.). `update.sh` reads this file to apply placeholder substitution when updating agents and CLAUDE.md sections. For projects that predate this feature, the update script auto-extracts values from the existing `CLAUDE.md` and agent files as a one-time migration.
+`/setup-wizard` writes `.claude/project-config.json` with all template variable values (framework, language, architecture, agent model, etc.). `update.sh` reads this file to apply placeholder substitution when updating agents and CLAUDE.md. For projects that predate this feature, the update script auto-extracts values from the existing `CLAUDE.md` and agent files as a one-time migration.
+
+### Three-way merge
+
+Agents and CLAUDE.md use three-way merge (`git merge-file`) to apply only the template diff while preserving all project customizations — wizard-added framework-specific items, custom sections, and manual edits. Baselines (snapshots of the last-applied substituted template) are stored in `.claude/agents/.baseline/` and `.claude/.baseline/`. The first update on a project saves baselines without changing files; subsequent updates merge cleanly.
 
 ### Version tracking
 

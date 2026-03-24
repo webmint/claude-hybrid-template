@@ -199,6 +199,13 @@ migrate_project_config() {
     testing="$(grep '^\*\*Testing\*\*:' "$TARGET_DIR/.claude/agents/qa-engineer.md" | sed 's/\*\*Testing\*\*: *//' | head -1)"
   fi
 
+  # Extract agent model from existing agent frontmatter
+  local agent_model=""
+  if [ -n "$sample_agent" ]; then
+    agent_model="$(grep '^model:' "$sample_agent" | sed 's/model: *//' | head -1)"
+  fi
+  : "${agent_model:=opus}"
+
   # Extract commit attribution rule from Commit Convention section
   local commit_attribution=""
   commit_attribution="$(awk '/^### Attribution/{found=1; next} /^### /{found=0} found{print}' "$claude_md" | sed '/^$/d')"
@@ -233,6 +240,7 @@ migrate_project_config() {
     --arg AGENT_LIST "${agent_list:-N/A}" \
     --arg WRAPPER_MODE_SECTION "" \
     --arg COMMIT_ATTRIBUTION "$commit_attribution" \
+    --arg AGENT_MODEL "$agent_model" \
     '{
       PROJECT_NAME: $PROJECT_NAME,
       PROJECT_TYPE: $PROJECT_TYPE,
@@ -253,16 +261,18 @@ migrate_project_config() {
       DEV_COMMANDS: $DEV_COMMANDS,
       AGENT_LIST: $AGENT_LIST,
       WRAPPER_MODE_SECTION: $WRAPPER_MODE_SECTION,
-      COMMIT_ATTRIBUTION: $COMMIT_ATTRIBUTION
+      COMMIT_ATTRIBUTION: $COMMIT_ATTRIBUTION,
+      AGENT_MODEL: $AGENT_MODEL
     }' > "$config_out"
 
   info "Wrote .claude/project-config.json — please review extracted values."
   return 0
 }
 
-# Section-based merge for CLAUDE.md:
+# Section-based merge (kept for potential future use):
 # Updates template-owned sections while preserving project-owned sections.
 # $3 is a newline-separated list of section headers to preserve from target.
+# NOTE: Currently unused — three-way merge via git merge-file replaced this.
 merge_sections() {
   local template_file="$1"
   local target_file="$2"
@@ -380,6 +390,15 @@ else
   fi
 fi
 
+# Validate config values — warn about placeholder-in-placeholder
+if [ "$HAS_CONFIG" = true ]; then
+  bad_keys="$(jq -r 'to_entries[] | select(.value | test("\\{\\{[A-Z_]+\\}\\}")) | .key' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  if [ -n "$bad_keys" ]; then
+    warn "project-config.json has unresolved placeholders in: $bad_keys"
+    warn "These values will not substitute correctly. Fix them or re-run /setup-wizard"
+  fi
+fi
+
 # ── Expand glob patterns to file lists ─────────────────────────────────────
 # Given a base dir and a newline-separated list of glob patterns on stdin,
 # print matching files (one per line). Uses find for ** patterns, direct
@@ -416,7 +435,6 @@ PROJECT_OWNED_PATTERNS="$(jq -r '.projectOwned.patterns[]' "$MANIFEST")"
 COPY_IF_MISSING_PATTERNS="$(jq -r '.copyIfMissing.patterns[]' "$MANIFEST")"
 MERGE_FILES="$(jq -r '.mergeFiles.files | keys[]' "$MANIFEST")"
 DERIVED_COUNT="$(jq -r '.templateDerived.mappings | length' "$MANIFEST")"
-SECTION_MERGE_FILES="$(jq -r '.sectionMerge.files // {} | keys[]' "$MANIFEST" 2>/dev/null || true)"
 
 # ── Build file lists ───────────────────────────────────────────────────────
 TEMPLATE_OWNED_FILES="$(echo "$TEMPLATE_OWNED_PATTERNS" | expand_patterns "$TEMPLATE_DIR")"
@@ -428,22 +446,31 @@ DERIVED_UPDATE=""
 DERIVED_ADD=""
 i=0
 while [ "$i" -lt "$DERIVED_COUNT" ]; do
-  src_dir="$(jq -r ".templateDerived.mappings[$i].source" "$MANIFEST")"
-  tgt_dir="$(jq -r ".templateDerived.mappings[$i].target" "$MANIFEST")"
-  strip="$(jq -r ".templateDerived.mappings[$i].strip_suffix" "$MANIFEST")"
+  src_path="$(jq -r ".templateDerived.mappings[$i].source" "$MANIFEST")"
+  tgt_path="$(jq -r ".templateDerived.mappings[$i].target" "$MANIFEST")"
+  strip="$(jq -r ".templateDerived.mappings[$i].strip_suffix // \"\"" "$MANIFEST")"
 
-  if [ -d "$TEMPLATE_DIR/$src_dir" ]; then
-    find "$TEMPLATE_DIR/$src_dir" -type f 2>/dev/null | while IFS= read -r src_file; do
-      # Get filename, strip suffix to get target filename
+  if [ -f "$TEMPLATE_DIR/$src_path" ]; then
+    # Single-file mapping (e.g., CLAUDE.template.md → CLAUDE.md)
+    src_rel="$src_path"
+    tgt_rel="$tgt_path"
+    if [ -f "$TARGET_DIR/$tgt_rel" ]; then
+      printf "%s\t%s\t%s\n" "$src_rel" "$tgt_rel" "$i"
+    else
+      printf "MISSING\t%s\t%s\t%s\n" "$src_rel" "$tgt_rel" "$i"
+    fi
+  elif [ -d "$TEMPLATE_DIR/$src_path" ]; then
+    # Directory-based mapping (e.g., agents/)
+    find "$TEMPLATE_DIR/$src_path" -type f 2>/dev/null | while IFS= read -r src_file; do
       basename="$(basename "$src_file")"
       target_name="$(echo "$basename" | sed "s/$strip//")"
       src_rel="${src_file#$TEMPLATE_DIR/}"
-      tgt_rel="$tgt_dir/$target_name"
+      tgt_rel="$tgt_path/$target_name"
 
       if [ -f "$TARGET_DIR/$tgt_rel" ]; then
-        printf "%s\t%s\n" "$src_rel" "$tgt_rel"
+        printf "%s\t%s\t%s\n" "$src_rel" "$tgt_rel" "$i"
       else
-        printf "MISSING\t%s\t%s\n" "$src_rel" "$tgt_rel"
+        printf "MISSING\t%s\t%s\t%s\n" "$src_rel" "$tgt_rel" "$i"
       fi
     done
   fi
@@ -451,7 +478,7 @@ while [ "$i" -lt "$DERIVED_COUNT" ]; do
 done > /tmp/update_derived_$$
 
 DERIVED_UPDATE="$(grep -v '^MISSING' /tmp/update_derived_$$ 2>/dev/null || true)"
-DERIVED_ADD="$(grep '^MISSING' /tmp/update_derived_$$ 2>/dev/null | cut -f2,3 || true)"
+DERIVED_ADD="$(grep '^MISSING' /tmp/update_derived_$$ 2>/dev/null | cut -f2,3,4 || true)"
 rm -f /tmp/update_derived_$$
 
 # Filter copyIfMissing to only files that are actually missing in target
@@ -511,21 +538,21 @@ echo "$COPY_IF_MISSING_ACTUAL" | while IFS= read -r f; do
   added "ADD (missing)  $f"
 done
 
-# Template-derived (update generated files from templates)
+# Template-derived (three-way merge)
 echo "$DERIVED_UPDATE" | while IFS= read -r line; do
   [ -z "$line" ] && continue
-  src="$(echo "$line" | cut -f1)"
   tgt="$(echo "$line" | cut -f2)"
-  overwrt "DERIVED  $src → $tgt"
-done
-
-# Section merge (mixed template/project ownership)
-echo "$SECTION_MERGE_FILES" | while IFS= read -r f; do
-  [ -z "$f" ] && continue
-  if [ -f "$TARGET_DIR/$f" ]; then
-    merged "SECTION-MERGE  $f (template sections updated, project sections preserved)"
+  tgt_dirname="$(dirname "$tgt")"
+  if [ "$tgt_dirname" = "." ]; then
+    baseline_dir="$TARGET_DIR/.claude/.baseline"
   else
-    added "ADD (new)  $f (from template)"
+    baseline_dir="$TARGET_DIR/$tgt_dirname/.baseline"
+  fi
+  baseline_name="$(basename "$tgt")"
+  if [ -f "$baseline_dir/$baseline_name" ]; then
+    merged "THREE-WAY MERGE  $tgt (template diff applied, project customizations preserved)"
+  else
+    info "BASELINE INIT  $tgt (agent unchanged — baseline saved for future three-way merges)"
   fi
 done
 
@@ -562,39 +589,66 @@ echo "$TEMPLATE_OWNED_FILES" | while IFS= read -r f; do
 done
 
 # ── Execute: templateDerived (update generated files from templates) ───────
+# Three-way merge for template-derived files:
+# - Generates a substituted "new" template
+# - If baseline exists: applies only the template diff (baseline→new) to the current file,
+#   preserving all project customizations (wizard-added items, manual edits)
+# - If no baseline: saves baseline for future merges, leaves current file unchanged
+# - Validates no unresolved {{PLACEHOLDER}} remain before writing
 echo "$DERIVED_UPDATE" | while IFS= read -r line; do
   [ -z "$line" ] && continue
   src="$(echo "$line" | cut -f1)"
   tgt="$(echo "$line" | cut -f2)"
   mkdir -p "$TARGET_DIR/$(dirname "$tgt")"
-  cp "$TEMPLATE_DIR/$src" "$TARGET_DIR/$tgt"
+
+  # Generate substituted template ("new" version)
+  new_agent="$(mktemp)"
+  cp "$TEMPLATE_DIR/$src" "$new_agent"
   if [ "$HAS_CONFIG" = true ]; then
-    substitute_placeholders "$TARGET_DIR/$tgt" "$PROJECT_CONFIG"
+    substitute_placeholders "$new_agent" "$PROJECT_CONFIG"
   fi
-  overwrt "Derived update: $tgt (from $src)"
-done
 
-# ── Execute: sectionMerge (mixed template/project sections) ───────────────
-echo "$SECTION_MERGE_FILES" | while IFS= read -r f; do
-  [ -z "$f" ] && continue
-
-  tpl_source="$(jq -r --arg f "$f" '.sectionMerge.files[$f].templateSource' "$MANIFEST")"
-  project_sections="$(jq -r --arg f "$f" '.sectionMerge.files[$f].projectOwnedSections[]' "$MANIFEST")"
-
-  if [ -f "$TARGET_DIR/$f" ] && [ -f "$TEMPLATE_DIR/$tpl_source" ]; then
-    merge_sections "$TEMPLATE_DIR/$tpl_source" "$TARGET_DIR/$f" "$project_sections"
-    if [ "$HAS_CONFIG" = true ]; then
-      substitute_placeholders "$TARGET_DIR/$f" "$PROJECT_CONFIG"
-    fi
-    merged "Section-merged: $f"
-  elif [ -f "$TEMPLATE_DIR/$tpl_source" ]; then
-    # Target doesn't have the file yet — copy from template
-    cp "$TEMPLATE_DIR/$tpl_source" "$TARGET_DIR/$f"
-    if [ "$HAS_CONFIG" = true ]; then
-      substitute_placeholders "$TARGET_DIR/$f" "$PROJECT_CONFIG"
-    fi
-    added "Added: $f (from template)"
+  # Validate substitution succeeded
+  if grep -q '{{[A-Z_]*}}' "$new_agent"; then
+    warn "Skipped $tgt — unresolved placeholders (check project-config.json)"
+    rm -f "$new_agent"
+    continue
   fi
+
+  # Three-way merge with baseline
+  # Baselines stored alongside the target: .claude/agents/.baseline/ for agents,
+  # .claude/.baseline/ for top-level files like CLAUDE.md
+  tgt_dirname="$(dirname "$tgt")"
+  if [ "$tgt_dirname" = "." ]; then
+    baseline_dir="$TARGET_DIR/.claude/.baseline"
+  else
+    baseline_dir="$TARGET_DIR/$tgt_dirname/.baseline"
+  fi
+  mkdir -p "$baseline_dir"
+  baseline_name="$(basename "$tgt")"
+  baseline="$baseline_dir/$baseline_name"
+
+  if [ -f "$baseline" ]; then
+    # Baseline exists → three-way merge
+    tmp_current="$(mktemp)"
+    cp "$TARGET_DIR/$tgt" "$tmp_current"
+    if git merge-file "$tmp_current" "$baseline" "$new_agent" 2>/dev/null; then
+      mv "$tmp_current" "$TARGET_DIR/$tgt"
+      merged "Three-way merged: $tgt"
+    else
+      # Conflicts — keep current agent unchanged, warn user
+      rm -f "$tmp_current"
+      warn "Merge conflicts in $tgt — agent unchanged, review template changes manually"
+    fi
+    # Always update baseline to new template version
+    cp "$new_agent" "$baseline"
+  else
+    # No baseline → save it, leave agent unchanged
+    cp "$new_agent" "$baseline"
+    info "Baseline saved for $tgt (agent unchanged — future updates will three-way merge)"
+  fi
+
+  rm -f "$new_agent"
 done
 
 # ── Execute: mergeFiles ────────────────────────────────────────────────────

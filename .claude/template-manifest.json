@@ -1,5 +1,5 @@
 {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Manifest for AIDevTeamForge update system",
 
   "templateOwned": {
@@ -19,7 +19,6 @@
       ".claude/commands/report-bug.md",
       ".claude/commands/refresh-docs.md",
       ".claude/commands/research.md",
-      ".claude/templates/**",
       ".claude/template-manifest.json",
       "scripts/**"
     ]
@@ -32,7 +31,12 @@
         "source": ".claude/templates/agents",
         "target": ".claude/agents",
         "strip_suffix": ".template",
-        "description": "Agent templates → generated agents. E.g. code-reviewer.template.md → code-reviewer.md"
+        "description": "Agent templates → generated agents. Three-way merge preserves all project customizations."
+      },
+      {
+        "source": ".claude/templates/CLAUDE.template.md",
+        "target": "CLAUDE.md",
+        "description": "CLAUDE.md template → project CLAUDE.md. Three-way merge preserves project overview, architecture, custom sections."
       }
     ]
   },
@@ -50,26 +54,10 @@
       "specs/**",
       "bugs/**",
       "docs/**",
+      ".claude/agents/.baseline/**",
+      ".claude/.baseline/**",
       "DEVELOPMENT-STATUS.md"
     ]
-  },
-
-  "sectionMerge": {
-    "description": "Files with mixed template/project ownership at the section level. Template-owned sections are updated; project-owned sections are preserved.",
-    "files": {
-      "CLAUDE.md": {
-        "sectionMarker": "^## ",
-        "templateSource": ".claude/templates/CLAUDE.template.md",
-        "projectOwnedSections": [
-          "## Project Overview",
-          "## Project Structure",
-          "## Development Commands",
-          "## Architecture",
-          "## Available Agents"
-        ],
-        "description": "Project overview, structure, commands, architecture, and agent list are project-specific; all other sections (workflow commands, quality gates, key rules, artifact storage, session continuity) are template-owned and will be updated"
-      }
-    }
   },
 
   "mergeFiles": {
