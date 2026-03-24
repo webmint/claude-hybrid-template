@@ -339,6 +339,40 @@ If wrapper mode is active, perform these additional steps:
 
 2. **Check for inner project's .claude/**: If the inner project already has a `.claude/` directory, warn the user: "The inner project at `[SOURCE_ROOT]/` already has its own `.claude/` directory. This wrapper's `.claude/` will take precedence for Claude Code running in the wrapper root."
 
+### 3.8: Write Project Config
+
+Write `.claude/project-config.json` containing **all** template variable values used during generation. This file is read by `update.sh` to apply placeholder substitution when updating agents and CLAUDE.md in future template updates.
+
+The keys must be the exact placeholder names (without `{{ }}`). Example:
+
+```json
+{
+  "PROJECT_NAME": "My App",
+  "PROJECT_TYPE": "fullstack",
+  "FRAMEWORK": "Next.js",
+  "LANGUAGE": "TypeScript",
+  "BUILD_TOOL": "next",
+  "BUILD_COMMAND": "npm run build",
+  "SOURCE_ROOT": ".",
+  "ARCHITECTURE": "Feature-based/Modular",
+  "ERROR_HANDLING": "Try/catch with custom error types",
+  "API_LAYER": "REST",
+  "STATE_MANAGEMENT": "Zustand",
+  "STYLING": "Tailwind CSS",
+  "MONOREPO_TOOL": "N/A",
+  "TESTING": "Vitest",
+  "PROJECT_PATHS": "- Source: `src/`\n- Components: `src/components/`\n- ...",
+  "PROJECT_STRUCTURE": "src/\n  components/\n  pages/\n  ...",
+  "DEV_COMMANDS": "- `npm run dev` — Start dev server\n- `npm run build` — Production build\n- ...",
+  "AGENT_LIST": "- `code-reviewer` — Code review\n- `qa-engineer` — Testing\n- ...",
+  "WRAPPER_MODE_SECTION": ""
+}
+```
+
+**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `SOURCE_ROOT`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`.
+
+Use the exact same values you substituted into the templates. For multi-line values, use `\n` for newlines in the JSON string. For values that don't apply, use `"N/A"` (not empty string).
+
 ## STEP 4: Cleanup & Summary
 
 1. Ask the user: "Setup is complete. Should I remove the `.claude/templates/` directory? (It's no longer needed but can be kept for re-running the wizard.)"

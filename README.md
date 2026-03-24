@@ -20,7 +20,7 @@ Every phase transition requires explicit user approval. No step can be skipped.
 /path/to/AIDevTeamForge/install.sh --wrapper /path/to/workspace inner-project-folder
 ```
 
-This copies `.claude/`, `specs/`, `bugs/`, `scripts/`, `.mcp.json`, and `update.sh` into your project. It also writes `.claude/template-version` to track which version you're on. Then open it in Claude Code and run `/setup-wizard`.
+This copies `.claude/`, `specs/`, `bugs/`, `scripts/`, and `.mcp.json` into your project. It also writes `.claude/template-version` to track which version you're on. Then open it in Claude Code and run `/setup-wizard`.
 
 The wizard will:
    - Detect workspace mode (standalone vs wrapper around a client project)
@@ -57,16 +57,22 @@ When the template is improved, you can push updates to projects that already use
 
 | Category | What happens | Examples |
 |----------|-------------|----------|
-| **Template-owned** | Overwritten with latest version | Commands (`.claude/commands/`), templates, scripts, `update.sh` |
-| **Project-owned** | Never touched | `CLAUDE.md`, `constitution.md`, agents, memory, specs, docs |
+| **Template-owned** | Overwritten with latest version | Commands (`.claude/commands/`), templates (`.claude/templates/`), manifest, scripts |
+| **Section-merge** | Template sections updated, project sections preserved | `CLAUDE.md` — workflow commands, key rules, quality gates update; project overview, architecture, agent list preserved; user-added custom sections kept |
+| **Template-derived** | Updated with placeholder substitution | Agents (`.claude/agents/`) — template content updated, `{{FRAMEWORK}}` etc. replaced using `.claude/project-config.json` |
+| **Project-owned** | Never touched | `constitution.md`, `.claude/project-config.json`, memory, specs, docs |
 | **Merge files** | Smart-merged (union of keys/lines) | `.mcp.json` (new servers added), `.gitignore` (new entries added) |
 | **Copy if missing** | Copied only if absent | New files added to the template that projects don't have yet |
+
+### Project config
+
+`/setup-wizard` writes `.claude/project-config.json` with all template variable values (framework, language, architecture, etc.). `update.sh` reads this file to apply placeholder substitution when updating agents and CLAUDE.md sections. For projects that predate this feature, the update script auto-extracts values from the existing `CLAUDE.md` and agent files as a one-time migration.
 
 ### Version tracking
 
 Each project stores its template version in `.claude/template-version`. The update script compares this with the template's current version and shows the relevant changelog entries before applying changes.
 
-Requires `jq` for JSON merging (`brew install jq` on macOS, `apt install jq` on Linux).
+Requires `jq` for JSON merging and `perl` for placeholder substitution (both pre-installed on macOS and most Linux distributions).
 
 ## Workflow
 

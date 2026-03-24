@@ -5,6 +5,28 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-03-24
+
+### Fixed
+- **Critical: Agents broken after update** — `update.sh` copied raw `.template.md` files with unresolved `{{PLACEHOLDER}}` variables (e.g., `{{FRAMEWORK}}`, `{{LANGUAGE}}`) into `.claude/agents/`, destroying project-specific values. Now applies placeholder substitution using `.claude/project-config.json`
+- **CLAUDE.md never updated** — was classified as project-owned so `update.sh` skipped it entirely. Template-owned sections (workflow commands, key rules, quality gates, artifact storage, session continuity) now update via section-based merge while project-specific sections (project overview, structure, commands, architecture, agent list) and user-added custom sections are preserved
+- **Templates and manifest not synced** — `.claude/templates/**` and `.claude/template-manifest.json` were missing from `templateOwned` patterns, causing stale copies in target projects after update
+
+### Added
+- `.claude/project-config.json` — machine-readable file storing all template variable values, written by `/setup-wizard` (Step 3.8), read by `update.sh` for placeholder substitution during updates
+- **Section-based merge** strategy in `update.sh` for files with mixed template/project ownership (CLAUDE.md)
+  - Template-owned sections updated from latest template
+  - Project-owned sections preserved from target
+  - User-added custom sections appended
+- **One-time migration** in `update.sh` — for existing projects without `project-config.json`, extracts values from `CLAUDE.md` and agent files automatically
+- `perl` dependency check in `update.sh` (required for multi-line placeholder substitution)
+- `/setup-wizard` Step 3.8 — writes `.claude/project-config.json` after generating all config files
+
+### Changed
+- `update.sh` now requires `perl` in addition to `jq`
+- Template manifest: `.claude/templates/**` and `.claude/template-manifest.json` moved to `templateOwned`; `CLAUDE.md` moved from `projectOwned` to new `sectionMerge` category
+- Command count: 14 (unchanged); template version: 1.11.0 → 1.12.0
+
 ## [1.11.0] - 2026-03-23
 
 ### Added

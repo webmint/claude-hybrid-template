@@ -37,6 +37,12 @@ Setup wizard decides which agents to generate based on detected stack.
 - `memory.template.md` — Persistent memory with universal categories
 - `storage-rules.md` — Full storage conventions for specs, tasks (with contracts and review checkpoint fields), bugs, and docs
 
+### Update System
+- `update.sh` — Manifest-driven update script with 5 strategies: overwrite (template-owned), section-merge (CLAUDE.md), derived with placeholder substitution (agents), smart merge (JSON/text), copy-if-missing
+- `.claude/project-config.json` — Machine-readable config written by `/setup-wizard`, stores all template variable values for `update.sh` placeholder substitution
+- `.claude/template-manifest.json` — Defines file ownership categories and update strategies; self-updates (template-owned)
+- One-time migration: extracts config from existing `CLAUDE.md` and agent files when `project-config.json` is missing
+
 ### Other
 - `README.md` — Full documentation with installation, workflow, pre-populated rules section
 - `specs/` — Empty specs directory with .gitkeep
@@ -101,6 +107,6 @@ Setup wizard decides which agents to generate based on detected stack.
 - Consider adding a `/commit` command that summarizes changes
 - Consider a `/status` command to show current feature progress
 - The setup wizard could detect more frameworks/tools
-- Agent templates use `{{PLACEHOLDER}}` variables — wizard must replace all of them
+- ~~Agent templates use `{{PLACEHOLDER}}` variables — wizard must replace all of them~~ **FIXED: `update.sh` now applies placeholder substitution using `.claude/project-config.json`**
 - `constitution.md` stub generation (step 3.5 in wizard) — template content TBD
 - ~~Consider if tech-writer should also update inline code docs (JSDoc/docstrings) or just `docs/` folder~~ **DECIDED: both. Tech-writer updates inline docs (JSDoc/docstrings) AND `docs/` folder.**

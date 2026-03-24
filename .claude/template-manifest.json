@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "Manifest for AIDevTeamForge update system",
 
   "templateOwned": {
@@ -19,12 +19,14 @@
       ".claude/commands/report-bug.md",
       ".claude/commands/refresh-docs.md",
       ".claude/commands/research.md",
+      ".claude/templates/**",
+      ".claude/template-manifest.json",
       "scripts/**"
     ]
   },
 
   "templateDerived": {
-    "description": "Template files whose changes should propagate to generated files in target projects. Only updates files that already exist in the target (i.e., agents the project chose to install).",
+    "description": "Template files whose changes should propagate to generated files in target projects. Only updates files that already exist in the target (i.e., agents the project chose to install). Placeholder variables are substituted using .claude/project-config.json.",
     "mappings": [
       {
         "source": ".claude/templates/agents",
@@ -38,8 +40,8 @@
   "projectOwned": {
     "description": "Files generated/customized per-project — NEVER overwrite",
     "patterns": [
-      "CLAUDE.md",
       "constitution.md",
+      ".claude/project-config.json",
       ".claude/memory/**",
       ".claude/settings.json",
       ".claude/settings.local.json",
@@ -50,6 +52,24 @@
       "docs/**",
       "DEVELOPMENT-STATUS.md"
     ]
+  },
+
+  "sectionMerge": {
+    "description": "Files with mixed template/project ownership at the section level. Template-owned sections are updated; project-owned sections are preserved.",
+    "files": {
+      "CLAUDE.md": {
+        "sectionMarker": "^## ",
+        "templateSource": ".claude/templates/CLAUDE.template.md",
+        "projectOwnedSections": [
+          "## Project Overview",
+          "## Project Structure",
+          "## Development Commands",
+          "## Architecture",
+          "## Available Agents"
+        ],
+        "description": "Project overview, structure, commands, architecture, and agent list are project-specific; all other sections (workflow commands, quality gates, key rules, artifact storage, session continuity) are template-owned and will be updated"
+      }
+    }
   },
 
   "mergeFiles": {

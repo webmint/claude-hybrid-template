@@ -72,6 +72,12 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+# ── Check for perl (required for placeholder substitution) ───────────────
+if ! command -v perl >/dev/null 2>&1; then
+  err "perl is required for placeholder substitution but was not found."
+  exit 1
+fi
+
 # ── Load manifest ──────────────────────────────────────────────────────────
 MANIFEST="$TEMPLATE_DIR/.claude/template-manifest.json"
 if [ ! -f "$MANIFEST" ]; then
@@ -119,6 +125,247 @@ if [ -f "$CHANGELOG" ] && [ "$TARGET_VERSION" != "(unknown)" ] && [ "$TARGET_VER
   echo ""
 fi
 
+# ── Project config ────────────────────────────────────────────────────────
+PROJECT_CONFIG="$TARGET_DIR/.claude/project-config.json"
+HAS_CONFIG=false
+
+# Substitute {{PLACEHOLDER}} variables in a file using project config.
+# Uses perl for safe multi-line replacement via environment variables.
+substitute_placeholders() {
+  local file="$1"
+  local config="$2"
+
+  local keys
+  keys="$(jq -r 'keys[]' "$config")"
+
+  for key in $keys; do
+    local value
+    value="$(jq -r --arg k "$key" '.[$k]' "$config")"
+    export "TPL_$key=$value"
+    perl -i -0pe "s/\\{\\{${key}\\}\\}/\$ENV{\"TPL_${key}\"}/g" "$file"
+    unset "TPL_$key"
+  done
+}
+
+# One-time migration: extract project config from existing CLAUDE.md.
+# Called when project-config.json doesn't exist yet.
+migrate_project_config() {
+  local claude_md="$TARGET_DIR/CLAUDE.md"
+  local config_out="$TARGET_DIR/.claude/project-config.json"
+
+  if [ ! -f "$claude_md" ]; then
+    warn "No CLAUDE.md found — cannot extract project config."
+    warn "Run /setup-wizard in your project to generate .claude/project-config.json"
+    return 1
+  fi
+
+  info "Migrating: extracting project config from existing CLAUDE.md..."
+
+  # Extract simple key-value pairs from the known **Key**: value format
+  local proj_name proj_type framework language build_tool build_cmd source_root
+  local architecture error_handling api_layer state_mgmt styling monorepo
+
+  proj_name="$(grep '^\*\*Name\*\*:' "$claude_md" | sed 's/\*\*Name\*\*: *//' | head -1)"
+  proj_type="$(grep '^\*\*Type\*\*:' "$claude_md" | sed 's/\*\*Type\*\*: *//' | head -1)"
+  framework="$(grep '^\*\*Framework\*\*:' "$claude_md" | sed 's/\*\*Framework\*\*: *//' | head -1)"
+  language="$(grep '^\*\*Language\*\*:' "$claude_md" | sed 's/\*\*Language\*\*: *//' | head -1)"
+  build_tool="$(grep '^\*\*Build Tool\*\*:' "$claude_md" | sed 's/\*\*Build Tool\*\*: *//' | head -1)"
+  build_cmd="$(grep '^\*\*Build Command\*\*:' "$claude_md" | sed 's/\*\*Build Command\*\*: *//' | head -1)"
+  source_root="$(grep '^\*\*Source Root\*\*:' "$claude_md" | sed 's/\*\*Source Root\*\*: *//' | head -1)"
+  architecture="$(grep '^\*\*Pattern\*\*:' "$claude_md" | sed 's/\*\*Pattern\*\*: *//' | head -1)"
+  error_handling="$(grep '^\*\*Error Handling\*\*:' "$claude_md" | sed 's/\*\*Error Handling\*\*: *//' | head -1)"
+  api_layer="$(grep '^\*\*API Layer\*\*:' "$claude_md" | sed 's/\*\*API Layer\*\*: *//' | head -1)"
+  state_mgmt="$(grep '^\*\*State Management\*\*:' "$claude_md" | sed 's/\*\*State Management\*\*: *//' | head -1)"
+  styling="$(grep '^\*\*Styling\*\*:' "$claude_md" | sed 's/\*\*Styling\*\*: *//' | head -1)"
+  monorepo="$(grep '^\*\*Monorepo\*\*:' "$claude_md" | sed 's/\*\*Monorepo\*\*: *//' | head -1)"
+
+  # Extract PROJECT_PATHS from an existing agent file (agents have ## Project Paths section)
+  local project_paths=""
+  local sample_agent
+  sample_agent="$(find "$TARGET_DIR/.claude/agents" -name '*.md' -type f 2>/dev/null | head -1)"
+  if [ -n "$sample_agent" ]; then
+    project_paths="$(awk '/^## Project Paths/{found=1; next} /^## /{found=0} found{print}' "$sample_agent" | sed '/^$/d')"
+  fi
+
+  # Extract multi-line sections from CLAUDE.md
+  local project_structure dev_commands agent_list
+  project_structure="$(awk '/^## Project Structure/{found=1; next} /^## /{found=0} found{print}' "$claude_md")"
+  dev_commands="$(awk '/^## Development Commands/{found=1; next} /^## /{found=0} found{print}' "$claude_md")"
+  agent_list="$(awk '/^## Available Agents/{found=1; next} /^## /{found=0} found{print}' "$claude_md")"
+
+  # Detect testing framework from existing agent or CLAUDE.md
+  local testing=""
+  if [ -f "$TARGET_DIR/.claude/agents/qa-engineer.md" ]; then
+    testing="$(grep '^\*\*Testing\*\*:' "$TARGET_DIR/.claude/agents/qa-engineer.md" | sed 's/\*\*Testing\*\*: *//' | head -1)"
+  fi
+
+  # Build JSON using jq
+  jq -n \
+    --arg PROJECT_NAME "${proj_name:-N/A}" \
+    --arg PROJECT_TYPE "${proj_type:-N/A}" \
+    --arg FRAMEWORK "${framework:-N/A}" \
+    --arg LANGUAGE "${language:-N/A}" \
+    --arg BUILD_TOOL "${build_tool:-N/A}" \
+    --arg BUILD_COMMAND "${build_cmd:-N/A}" \
+    --arg SOURCE_ROOT "${source_root:-\.}" \
+    --arg ARCHITECTURE "${architecture:-N/A}" \
+    --arg ERROR_HANDLING "${error_handling:-N/A}" \
+    --arg API_LAYER "${api_layer:-N/A}" \
+    --arg STATE_MANAGEMENT "${state_mgmt:-N/A}" \
+    --arg STYLING "${styling:-N/A}" \
+    --arg MONOREPO_TOOL "${monorepo:-N/A}" \
+    --arg TESTING "${testing:-N/A}" \
+    --arg PROJECT_PATHS "${project_paths:-N/A}" \
+    --arg PROJECT_STRUCTURE "${project_structure:-N/A}" \
+    --arg DEV_COMMANDS "${dev_commands:-N/A}" \
+    --arg AGENT_LIST "${agent_list:-N/A}" \
+    --arg WRAPPER_MODE_SECTION "" \
+    '{
+      PROJECT_NAME: $PROJECT_NAME,
+      PROJECT_TYPE: $PROJECT_TYPE,
+      FRAMEWORK: $FRAMEWORK,
+      LANGUAGE: $LANGUAGE,
+      BUILD_TOOL: $BUILD_TOOL,
+      BUILD_COMMAND: $BUILD_COMMAND,
+      SOURCE_ROOT: $SOURCE_ROOT,
+      ARCHITECTURE: $ARCHITECTURE,
+      ERROR_HANDLING: $ERROR_HANDLING,
+      API_LAYER: $API_LAYER,
+      STATE_MANAGEMENT: $STATE_MANAGEMENT,
+      STYLING: $STYLING,
+      MONOREPO_TOOL: $MONOREPO_TOOL,
+      TESTING: $TESTING,
+      PROJECT_PATHS: $PROJECT_PATHS,
+      PROJECT_STRUCTURE: $PROJECT_STRUCTURE,
+      DEV_COMMANDS: $DEV_COMMANDS,
+      AGENT_LIST: $AGENT_LIST,
+      WRAPPER_MODE_SECTION: $WRAPPER_MODE_SECTION
+    }' > "$config_out"
+
+  info "Wrote .claude/project-config.json — please review extracted values."
+  return 0
+}
+
+# Section-based merge for CLAUDE.md:
+# Updates template-owned sections while preserving project-owned sections.
+# $3 is a newline-separated list of section headers to preserve from target.
+merge_sections() {
+  local template_file="$1"
+  local target_file="$2"
+  local project_sections="$3"  # newline-separated list of headers to preserve
+
+  local tmp_out
+  tmp_out="$(mktemp)"
+
+  # Use perl to split, merge, and reassemble sections.
+  # Project-owned sections come from target; all others come from template.
+  # The list of project-owned headers is passed via env var (newline-separated).
+  export MERGE_PROJECT_SECTIONS="$project_sections"
+  perl -e '
+    use strict;
+    use warnings;
+
+    my ($template_path, $target_path) = @ARGV;
+
+    # Parse project-owned section headers from env
+    my %project_owned;
+    for my $h (split /\n/, $ENV{MERGE_PROJECT_SECTIONS} // "") {
+      $h =~ s/^\s+|\s+$//g;
+      $project_owned{$h} = 1 if length($h);
+    }
+
+    # Read and split a file into sections by ## headers
+    sub read_sections {
+      my ($path) = @_;
+      open my $fh, "<", $path or die "Cannot open $path: $!";
+      my @sections;
+      my $current_header = "";
+      my $current_body = "";
+      my $preamble = "";
+      my $in_preamble = 1;
+
+      while (my $line = <$fh>) {
+        if ($line =~ /^## /) {
+          if ($in_preamble) {
+            $preamble = $current_body;
+            $in_preamble = 0;
+          } else {
+            push @sections, { header => $current_header, body => $current_body };
+          }
+          chomp $line;
+          $current_header = $line;
+          $current_body = "";
+        } else {
+          $current_body .= $line;
+        }
+      }
+      # Push last section
+      if (!$in_preamble) {
+        push @sections, { header => $current_header, body => $current_body };
+      } else {
+        $preamble = $current_body;
+      }
+      close $fh;
+      return ($preamble, \@sections);
+    }
+
+    my ($tpl_preamble, $tpl_sections) = read_sections($template_path);
+    my ($tgt_preamble, $tgt_sections) = read_sections($target_path);
+
+    # Index target sections by header
+    my %tgt_by_header;
+    for my $s (@$tgt_sections) {
+      $tgt_by_header{$s->{header}} = $s->{body};
+    }
+
+    # Track which target sections we used
+    my %used_headers;
+
+    # Build merged output: follow template section order
+    # Preamble: use target preamble (has # CLAUDE.md header which is project-specific)
+    my $output = $tgt_preamble;
+
+    for my $s (@$tpl_sections) {
+      my $header = $s->{header};
+      $used_headers{$header} = 1;
+
+      $output .= "$header\n";
+      if ($project_owned{$header} && exists $tgt_by_header{$header}) {
+        # Project-owned: use target version
+        $output .= $tgt_by_header{$header};
+      } else {
+        # Template-owned: use template version
+        $output .= $s->{body};
+      }
+    }
+
+    # Append any custom sections from target that are not in template
+    for my $s (@$tgt_sections) {
+      unless ($used_headers{$s->{header}}) {
+        $output .= "$s->{header}\n$s->{body}";
+      }
+    }
+
+    print $output;
+  ' "$template_file" "$target_file" > "$tmp_out"
+  unset MERGE_PROJECT_SECTIONS
+
+  mv "$tmp_out" "$target_file"
+}
+
+# Check for project config — migrate if missing
+if [ -f "$PROJECT_CONFIG" ]; then
+  HAS_CONFIG=true
+else
+  warn "No .claude/project-config.json found in target project."
+  if migrate_project_config; then
+    HAS_CONFIG=true
+  else
+    warn "Skipping placeholder substitution for agents and CLAUDE.md."
+    warn "Re-run /setup-wizard to generate .claude/project-config.json"
+  fi
+fi
+
 # ── Expand glob patterns to file lists ─────────────────────────────────────
 # Given a base dir and a newline-separated list of glob patterns on stdin,
 # print matching files (one per line). Uses find for ** patterns, direct
@@ -155,6 +402,7 @@ PROJECT_OWNED_PATTERNS="$(jq -r '.projectOwned.patterns[]' "$MANIFEST")"
 COPY_IF_MISSING_PATTERNS="$(jq -r '.copyIfMissing.patterns[]' "$MANIFEST")"
 MERGE_FILES="$(jq -r '.mergeFiles.files | keys[]' "$MANIFEST")"
 DERIVED_COUNT="$(jq -r '.templateDerived.mappings | length' "$MANIFEST")"
+SECTION_MERGE_FILES="$(jq -r '.sectionMerge.files // {} | keys[]' "$MANIFEST" 2>/dev/null || true)"
 
 # ── Build file lists ───────────────────────────────────────────────────────
 TEMPLATE_OWNED_FILES="$(echo "$TEMPLATE_OWNED_PATTERNS" | expand_patterns "$TEMPLATE_DIR")"
@@ -257,6 +505,16 @@ echo "$DERIVED_UPDATE" | while IFS= read -r line; do
   overwrt "DERIVED  $src → $tgt"
 done
 
+# Section merge (mixed template/project ownership)
+echo "$SECTION_MERGE_FILES" | while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  if [ -f "$TARGET_DIR/$f" ]; then
+    merged "SECTION-MERGE  $f (template sections updated, project sections preserved)"
+  else
+    added "ADD (new)  $f (from template)"
+  fi
+done
+
 # Skipped (projectOwned) — just list a summary
 PROJECT_OWNED_FILES="$(echo "$PROJECT_OWNED_PATTERNS" | expand_patterns "$TARGET_DIR" 2>/dev/null || true)"
 SKIP_COUNT="$(echo "$PROJECT_OWNED_FILES" | grep -c . || true)"
@@ -296,7 +554,33 @@ echo "$DERIVED_UPDATE" | while IFS= read -r line; do
   tgt="$(echo "$line" | cut -f2)"
   mkdir -p "$TARGET_DIR/$(dirname "$tgt")"
   cp "$TEMPLATE_DIR/$src" "$TARGET_DIR/$tgt"
+  if [ "$HAS_CONFIG" = true ]; then
+    substitute_placeholders "$TARGET_DIR/$tgt" "$PROJECT_CONFIG"
+  fi
   overwrt "Derived update: $tgt (from $src)"
+done
+
+# ── Execute: sectionMerge (mixed template/project sections) ───────────────
+echo "$SECTION_MERGE_FILES" | while IFS= read -r f; do
+  [ -z "$f" ] && continue
+
+  tpl_source="$(jq -r --arg f "$f" '.sectionMerge.files[$f].templateSource' "$MANIFEST")"
+  project_sections="$(jq -r --arg f "$f" '.sectionMerge.files[$f].projectOwnedSections[]' "$MANIFEST")"
+
+  if [ -f "$TARGET_DIR/$f" ] && [ -f "$TEMPLATE_DIR/$tpl_source" ]; then
+    merge_sections "$TEMPLATE_DIR/$tpl_source" "$TARGET_DIR/$f" "$project_sections"
+    if [ "$HAS_CONFIG" = true ]; then
+      substitute_placeholders "$TARGET_DIR/$f" "$PROJECT_CONFIG"
+    fi
+    merged "Section-merged: $f"
+  elif [ -f "$TEMPLATE_DIR/$tpl_source" ]; then
+    # Target doesn't have the file yet — copy from template
+    cp "$TEMPLATE_DIR/$tpl_source" "$TARGET_DIR/$f"
+    if [ "$HAS_CONFIG" = true ]; then
+      substitute_placeholders "$TARGET_DIR/$f" "$PROJECT_CONFIG"
+    fi
+    added "Added: $f (from template)"
+  fi
 done
 
 # ── Execute: mergeFiles ────────────────────────────────────────────────────
