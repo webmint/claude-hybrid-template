@@ -211,6 +211,7 @@ For source files with inline doc updates, add them individually:
 git add [each source file the tech-writer modified]
 git commit -m "docs: refresh documentation for [list affected modules]"
 ```
+Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
 
 Do NOT use `git add -A` — only add files the tech-writer was supposed to modify.
 

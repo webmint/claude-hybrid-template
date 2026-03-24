@@ -241,7 +241,7 @@ Wait for user response before proceeding.
    - The feature spec for context
    - Instruction: "These public APIs were flagged during verification as lacking documentation. Add inline docs (JSDoc/docstrings) to each, and create or update the relevant `docs/` file."
 2. After the tech-writer completes, verify the flagged APIs now have inline docs
-3. Commit the doc changes:
+3. Commit the doc changes (follow the **Commit Convention** section in CLAUDE.md for attribution rules):
    ```
    git add -A && git commit -m "docs: add missing documentation flagged by /verify"
    ```

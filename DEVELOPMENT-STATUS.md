@@ -30,7 +30,7 @@ By detected stack: `db-engineer`, `devops-engineer`, `design-auditor`, `api-desi
 Setup wizard decides which agents to generate based on detected stack.
 
 ### Supporting Templates (in `.claude/templates/`)
-- `CLAUDE.template.md` — Main project config, workflow commands, key rules (Always/Never lists)
+- `CLAUDE.template.md` — Main project config, workflow commands, key rules (Always/Never lists), commit convention (format + attribution)
 - `constitution.template.md` — Pre-populated universal rules + project-specific placeholders
 - `settings.template.json` — PostToolUse type-checking hook + safe permissions
 - `spec.template.md` — Feature spec template with 10 sections
@@ -39,9 +39,9 @@ Setup wizard decides which agents to generate based on detected stack.
 
 ### Update System
 - `update.sh` — Manifest-driven update script with 5 strategies: overwrite (template-owned), section-merge (CLAUDE.md), derived with placeholder substitution (agents), smart merge (JSON/text), copy-if-missing
-- `.claude/project-config.json` — Machine-readable config written by `/setup-wizard`, stores all template variable values for `update.sh` placeholder substitution
+- `.claude/project-config.json` — Machine-readable config written by `/setup-wizard`, stores all template variable values (including `COMMIT_ATTRIBUTION`) for `update.sh` placeholder substitution
 - `.claude/template-manifest.json` — Defines file ownership categories and update strategies; self-updates (template-owned)
-- One-time migration: extracts config from existing `CLAUDE.md` and agent files when `project-config.json` is missing
+- One-time migration: extracts config from existing `CLAUDE.md` and agent files when `project-config.json` is missing (defaults to no AI attribution for `COMMIT_ATTRIBUTION`)
 
 ### Other
 - `README.md` — Full documentation with installation, workflow, pre-populated rules section
@@ -73,6 +73,7 @@ Setup wizard decides which agents to generate based on detected stack.
 10. **Onboarding for existing projects** — `/onboard` generates comprehensive docs as the knowledge base for all agents
 11. **Wrapper mode for client-invisible AI** — template wraps around existing project folder; zero Claude traces in the client's repo
 12. **Cross-task contracts prevent silent drift** — each task declares Expects/Produces; preconditions catch upstream semantic errors before they compound, postconditions verify the task delivered what downstream tasks need
+13. **Configurable AI attribution** — commits default to no Claude/AI mention; opt-in via setup wizard. Rule stored in CLAUDE.md and enforced by all commit-creating commands
 
 ### Onboarding System (`/onboard`)
 - Runs after `/constitute` for existing projects — uses constitution + CLAUDE.md + memory as input

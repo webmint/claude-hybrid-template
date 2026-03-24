@@ -326,6 +326,7 @@ Squash all `[WIP]` and `[checkpoint]` commits for this fix into a single clean c
 git reset --soft [checkpoint-commit-hash]
 git commit -m "fix([area]): [concise description of what was fixed]"
 ```
+Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
 
 ### 8.1.5: Update Bug File (if applicable)
 

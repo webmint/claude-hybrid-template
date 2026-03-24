@@ -413,6 +413,7 @@ Provide a concise summary to the user:
    git reset --soft [checkpoint-commit-hash]
    git commit -m "feat([feature-name]): Task [N] — [title]"
    ```
+   Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
 
 2. Delete `.claude/wip.md`
 

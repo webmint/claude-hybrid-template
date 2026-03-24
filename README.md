@@ -26,6 +26,7 @@ The wizard will:
    - Detect workspace mode (standalone vs wrapper around a client project)
    - Detect your project structure (or interview you for greenfield projects)
    - Ask clarifying questions about your stack
+   - Ask whether commits should include AI co-author attribution (default: no)
    - Generate `CLAUDE.md`, `constitution.md`, agents, hooks, and memory
    - Remove the templates directory when done
 
@@ -192,6 +193,7 @@ bugs/
 - **Constitution compliance**: Checked in pre-flight before every task
 - **Cross-task contracts**: Each task declares what it expects (preconditions) and produces (postconditions). Preconditions are verified before execution; postconditions after. Contract violations stop execution with upstream tracing
 - **Review checkpoint gates**: Auto-placed at dependency convergence points and layer boundaries. User reviews preceding work before continuing in batch mode
+- **Commit convention**: All commits follow Conventional Commits format. AI co-author attribution is off by default — no `Co-Authored-By` trailers, no AI mentions in commit messages. Opt-in during `/setup-wizard`
 - **9-category ambiguity scan**: Catches requirement gaps before implementation
 - **Auto-compact**: In batch execution, automatically compacts context at heavy load to prevent degradation
 

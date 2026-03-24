@@ -392,6 +392,7 @@ Squash all `[WIP]` and `[checkpoint]` commits for this refactoring into a single
 git reset --soft [checkpoint-commit-hash]
 git commit -m "refactor([area]): [concise description of what was restructured]"
 ```
+Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
 
 ### 8.2: Delete WIP Marker
 

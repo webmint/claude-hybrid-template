@@ -5,6 +5,21 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-03-24
+
+### Added
+- **Commit Convention** section in CLAUDE.md template — consolidates all commit rules (format, attribution, general rules) in one place
+- **AI attribution control** — `/setup-wizard` Question 7 asks whether commits should include Claude co-author attribution (`Co-Authored-By` trailer)
+  - Default is **No** — no AI/Claude mention in commit titles, body, trailers, or git identity
+  - Opt-in: appends `Co-Authored-By: Claude <noreply@anthropic.com>` to every commit
+  - Stored in `CLAUDE.md` (Commit Convention > Attribution section) and `.claude/project-config.json` (`COMMIT_ATTRIBUTION` key)
+- `COMMIT_ATTRIBUTION` placeholder in CLAUDE.md template, substituted by `/setup-wizard` based on user preference
+- All commit-creating commands (`/execute-task`, `/fix`, `/refactor`, `/verify`, `/refresh-docs`) now reference the Commit Convention in CLAUDE.md for format and attribution rules
+- `update.sh` migration extracts `COMMIT_ATTRIBUTION` from existing CLAUDE.md; defaults to no-attribution if section not found
+
+### Changed
+- Template version: 1.13.0 → 1.14.0
+
 ## [1.13.0] - 2026-03-24
 
 ### Changed

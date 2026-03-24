@@ -145,6 +145,26 @@ If the refactoring grows beyond 5 files, recommends escalating to `/specify`.
 5. **Never modify outside scope** — do not "fix" unrelated code you happen to see
 6. **Never guess** — if unsure how code works, read it; if unsure what user wants, ask
 
+## Commit Convention
+
+### Format
+- **Final commits**: Conventional Commits — `type(scope): description`
+  - `feat(scope):` — new feature
+  - `fix(scope):` — bug fix
+  - `refactor(scope):` — behavior-preserving restructuring
+  - `docs:` — documentation only
+- **WIP commits**: `[WIP] Type: description — phase detail` (squashed into final commit)
+- **Checkpoint commits**: `[checkpoint] Pre-type: description` (squashed into final commit)
+
+### Attribution
+{{COMMIT_ATTRIBUTION}}
+
+### Rules
+- Keep commit title under 72 characters
+- No period at end of title
+- Body is optional; use for non-obvious "why"
+- One logical change per final commit (WIP commits get squashed)
+
 ## Artifact Storage
 
 ```
