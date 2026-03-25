@@ -73,6 +73,8 @@ Silently scan the project to detect as much as possible before asking questions.
 - `react` or `next` in dependencies → React/Next.js
 - `svelte` or `@sveltejs/kit` in dependencies → Svelte/SvelteKit
 - `angular` in dependencies → Angular
+- `astro` in dependencies → Astro
+- `@remix-run/react` in dependencies → Remix
 - `express` or `fastify` or `koa` or `hono` in dependencies → Node.js backend
 - `nestjs` in dependencies → NestJS
 - `django` or `flask` in `requirements.txt` / `pyproject.toml` → Python backend
@@ -125,6 +127,10 @@ Silently scan the project to detect as much as possible before asking questions.
 **Error handling patterns** (scan a few source files):
 - `Either`, `Left`, `Right` imports → Either/Result pattern (purify-ts, fp-ts, neverthrow)
 - Mostly `try/catch` → Traditional error handling
+
+**Runtimes:**
+- `deno.json` or `deno.jsonc` → Deno
+- `bun.lockb` or `bunfig.toml` → Bun
 
 **Other:**
 - `Dockerfile` → Docker
@@ -405,6 +411,8 @@ The keys must be the exact placeholder names (without `{{ }}`). Example:
   "LANGUAGE": "TypeScript",
   "BUILD_TOOL": "next",
   "BUILD_COMMAND": "npm run build",
+  "TYPE_CHECK_COMMAND": "tsc --noEmit --pretty 2>&1 | head -20",
+  "LINT_COMMAND": "npx eslint --no-error-on-unmatched-pattern",
   "SOURCE_ROOT": ".",
   "PROJECT_MODE": "greenfield",
   "ARCHITECTURE": "Feature-based/Modular",
@@ -424,7 +432,7 @@ The keys must be the exact placeholder names (without `{{ }}`). Example:
 }
 ```
 
-**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `AGENT_MODEL`.
+**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `AGENT_MODEL`.
 
 Use the exact same values you substituted into the templates. For multi-line values, use `\n` for newlines in the JSON string. For values that don't apply, use `"N/A"` (not empty string).
 

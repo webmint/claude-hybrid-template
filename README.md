@@ -188,7 +188,7 @@ bugs/
 ## Automated Guardrails
 
 - **PostToolUse hooks**: Type checking runs after every file edit
-- **Build verification**: Runs the actual project build command after tsc/lint to catch bundler-specific failures (import resolution, asset processing, SSR errors, unexpected tokens)
+- **Build verification**: Runs the project's Type Check Command, Lint Command, and Build Command after each task to catch type errors, style violations, and bundler-specific failures
 - **Self-repair loop**: When verification catches errors (tsc, lint, or build), a repair agent automatically fixes them (up to 3 attempts) before escalating
 - **Persistent memory**: Lessons learned carry across sessions
 - **Agent specialization**: Domain-specific agents, not generic ones

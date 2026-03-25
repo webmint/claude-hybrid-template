@@ -164,6 +164,7 @@ migrate_project_config() {
   # Extract simple key-value pairs from the known **Key**: value format
   local proj_name proj_type framework language build_tool build_cmd source_root
   local architecture error_handling api_layer state_mgmt styling monorepo
+  local type_check_cmd lint_cmd project_mode
 
   proj_name="$(grep '^\*\*Name\*\*:' "$claude_md" | sed 's/\*\*Name\*\*: *//' | head -1)"
   proj_type="$(grep '^\*\*Type\*\*:' "$claude_md" | sed 's/\*\*Type\*\*: *//' | head -1)"
@@ -171,6 +172,8 @@ migrate_project_config() {
   language="$(grep '^\*\*Language\*\*:' "$claude_md" | sed 's/\*\*Language\*\*: *//' | head -1)"
   build_tool="$(grep '^\*\*Build Tool\*\*:' "$claude_md" | sed 's/\*\*Build Tool\*\*: *//' | head -1)"
   build_cmd="$(grep '^\*\*Build Command\*\*:' "$claude_md" | sed 's/\*\*Build Command\*\*: *//' | head -1)"
+  type_check_cmd="$(grep '^\*\*Type Check Command\*\*:' "$claude_md" | sed 's/\*\*Type Check Command\*\*: *//' | head -1)"
+  lint_cmd="$(grep '^\*\*Lint Command\*\*:' "$claude_md" | sed 's/\*\*Lint Command\*\*: *//' | head -1)"
   source_root="$(grep '^\*\*Source Root\*\*:' "$claude_md" | sed 's/\*\*Source Root\*\*: *//' | head -1)"
   architecture="$(grep '^\*\*Pattern\*\*:' "$claude_md" | sed 's/\*\*Pattern\*\*: *//' | head -1)"
   error_handling="$(grep '^\*\*Error Handling\*\*:' "$claude_md" | sed 's/\*\*Error Handling\*\*: *//' | head -1)"
@@ -178,6 +181,34 @@ migrate_project_config() {
   state_mgmt="$(grep '^\*\*State Management\*\*:' "$claude_md" | sed 's/\*\*State Management\*\*: *//' | head -1)"
   styling="$(grep '^\*\*Styling\*\*:' "$claude_md" | sed 's/\*\*Styling\*\*: *//' | head -1)"
   monorepo="$(grep '^\*\*Monorepo\*\*:' "$claude_md" | sed 's/\*\*Monorepo\*\*: *//' | head -1)"
+
+  # Detect project mode: check if project-config.json hint exists, else infer from source file count
+  project_mode="existing"
+  local src_root="${source_root:-.}"
+  if [ "$src_root" != "." ]; then
+    src_root="$TARGET_DIR/$src_root"
+  else
+    src_root="$TARGET_DIR"
+  fi
+  local src_count
+  src_count="$(find "$src_root" -maxdepth 3 -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.rs' -o -name '*.vue' -o -name '*.tsx' -o -name '*.jsx' -o -name '*.svelte' \) -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/dist/*' -not -path '*/build/*' 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$src_count" -le 5 ] 2>/dev/null; then
+    project_mode="greenfield"
+  fi
+
+  # Fallback for type check/lint commands based on language if not found in CLAUDE.md
+  if [ -z "$type_check_cmd" ] || [ "$type_check_cmd" = "N/A" ]; then
+    case "$(echo "$language" | tr '[:upper:]' '[:lower:]')" in
+      *typescript*) type_check_cmd="tsc --noEmit --pretty 2>&1 | head -20" ;;
+      *python*)     type_check_cmd="python -m py_compile" ;;
+      *go*)         type_check_cmd="go vet ./..." ;;
+      *rust*)       type_check_cmd="cargo check 2>&1 | head -20" ;;
+      *)            type_check_cmd="N/A" ;;
+    esac
+  fi
+  if [ -z "$lint_cmd" ] || [ "$lint_cmd" = "N/A" ]; then
+    lint_cmd="N/A"
+  fi
 
   # Extract PROJECT_PATHS from an existing agent file (agents have ## Project Paths section)
   local project_paths=""
@@ -226,7 +257,10 @@ migrate_project_config() {
     --arg LANGUAGE "${language:-N/A}" \
     --arg BUILD_TOOL "${build_tool:-N/A}" \
     --arg BUILD_COMMAND "${build_cmd:-N/A}" \
+    --arg TYPE_CHECK_COMMAND "${type_check_cmd:-N/A}" \
+    --arg LINT_COMMAND "${lint_cmd:-N/A}" \
     --arg SOURCE_ROOT "${source_root:-\.}" \
+    --arg PROJECT_MODE "$project_mode" \
     --arg ARCHITECTURE "${architecture:-N/A}" \
     --arg ERROR_HANDLING "${error_handling:-N/A}" \
     --arg API_LAYER "${api_layer:-N/A}" \
@@ -248,7 +282,10 @@ migrate_project_config() {
       LANGUAGE: $LANGUAGE,
       BUILD_TOOL: $BUILD_TOOL,
       BUILD_COMMAND: $BUILD_COMMAND,
+      TYPE_CHECK_COMMAND: $TYPE_CHECK_COMMAND,
+      LINT_COMMAND: $LINT_COMMAND,
       SOURCE_ROOT: $SOURCE_ROOT,
+      PROJECT_MODE: $PROJECT_MODE,
       ARCHITECTURE: $ARCHITECTURE,
       ERROR_HANDLING: $ERROR_HANDLING,
       API_LAYER: $API_LAYER,
@@ -267,119 +304,6 @@ migrate_project_config() {
 
   info "Wrote .claude/project-config.json — please review extracted values."
   return 0
-}
-
-# Section-based merge (kept for potential future use):
-# Updates template-owned sections while preserving project-owned sections.
-# $3 is a newline-separated list of section headers to preserve from target.
-# NOTE: Currently unused — three-way merge via git merge-file replaced this.
-# LIMITATION: This function splits on ^## (h2 headers) only. Custom ### or #
-# sections added by the user will be merged into the body of the preceding ##
-# section. This is acceptable because CLAUDE.md and other managed files use ##
-# as the primary section delimiter. If finer-grained merging is needed, extend
-# the regex to split on ^#{1,6} and adjust the merge logic accordingly.
-merge_sections() {
-  local template_file="$1"
-  local target_file="$2"
-  local project_sections="$3"  # newline-separated list of headers to preserve
-
-  local tmp_out
-  tmp_out="$(mktemp)"
-
-  # Use perl to split, merge, and reassemble sections.
-  # Project-owned sections come from target; all others come from template.
-  # The list of project-owned headers is passed via env var (newline-separated).
-  export MERGE_PROJECT_SECTIONS="$project_sections"
-  perl -e '
-    use strict;
-    use warnings;
-
-    my ($template_path, $target_path) = @ARGV;
-
-    # Parse project-owned section headers from env
-    my %project_owned;
-    for my $h (split /\n/, $ENV{MERGE_PROJECT_SECTIONS} // "") {
-      $h =~ s/^\s+|\s+$//g;
-      $project_owned{$h} = 1 if length($h);
-    }
-
-    # Read and split a file into sections by ## headers
-    sub read_sections {
-      my ($path) = @_;
-      open my $fh, "<", $path or die "Cannot open $path: $!";
-      my @sections;
-      my $current_header = "";
-      my $current_body = "";
-      my $preamble = "";
-      my $in_preamble = 1;
-
-      while (my $line = <$fh>) {
-        if ($line =~ /^## /) {
-          if ($in_preamble) {
-            $preamble = $current_body;
-            $in_preamble = 0;
-          } else {
-            push @sections, { header => $current_header, body => $current_body };
-          }
-          chomp $line;
-          $current_header = $line;
-          $current_body = "";
-        } else {
-          $current_body .= $line;
-        }
-      }
-      # Push last section
-      if (!$in_preamble) {
-        push @sections, { header => $current_header, body => $current_body };
-      } else {
-        $preamble = $current_body;
-      }
-      close $fh;
-      return ($preamble, \@sections);
-    }
-
-    my ($tpl_preamble, $tpl_sections) = read_sections($template_path);
-    my ($tgt_preamble, $tgt_sections) = read_sections($target_path);
-
-    # Index target sections by header
-    my %tgt_by_header;
-    for my $s (@$tgt_sections) {
-      $tgt_by_header{$s->{header}} = $s->{body};
-    }
-
-    # Track which target sections we used
-    my %used_headers;
-
-    # Build merged output: follow template section order
-    # Preamble: use target preamble (has # CLAUDE.md header which is project-specific)
-    my $output = $tgt_preamble;
-
-    for my $s (@$tpl_sections) {
-      my $header = $s->{header};
-      $used_headers{$header} = 1;
-
-      $output .= "$header\n";
-      if ($project_owned{$header} && exists $tgt_by_header{$header}) {
-        # Project-owned: use target version
-        $output .= $tgt_by_header{$header};
-      } else {
-        # Template-owned: use template version
-        $output .= $s->{body};
-      }
-    }
-
-    # Append any custom sections from target that are not in template
-    for my $s (@$tgt_sections) {
-      unless ($used_headers{$s->{header}}) {
-        $output .= "$s->{header}\n$s->{body}";
-      }
-    }
-
-    print $output;
-  ' "$template_file" "$target_file" > "$tmp_out"
-  unset MERGE_PROJECT_SECTIONS
-
-  mv "$tmp_out" "$target_file"
 }
 
 # Check for project config — migrate if missing
@@ -640,13 +564,13 @@ echo "$DERIVED_UPDATE" | while IFS= read -r line; do
     if git merge-file "$tmp_current" "$baseline" "$new_agent" 2>/dev/null; then
       mv "$tmp_current" "$TARGET_DIR/$tgt"
       merged "Three-way merged: $tgt"
+      # Update baseline to new template version (only on successful merge)
+      cp "$new_agent" "$baseline"
     else
-      # Conflicts — keep current agent unchanged, warn user
+      # Conflicts — keep current agent AND baseline unchanged so next update retries the merge
       rm -f "$tmp_current"
-      warn "Merge conflicts in $tgt — agent unchanged, review template changes manually"
+      warn "Merge conflicts in $tgt — agent and baseline unchanged, review template changes manually"
     fi
-    # Always update baseline to new template version
-    cp "$new_agent" "$baseline"
   else
     # No baseline → save it, leave agent unchanged
     cp "$new_agent" "$baseline"

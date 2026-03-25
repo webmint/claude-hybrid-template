@@ -123,8 +123,8 @@ For each task, generate:
 **Done when**:
 - [ ] [Testable condition]
 - [ ] [Another testable condition]
-- [ ] TypeScript compiles without errors
-- [ ] ESLint passes on changed files
+- [ ] Type checker passes on changed files
+- [ ] Linter passes on changed files
 
 **Spec criteria addressed**: AC-[numbers]
 ```

@@ -12,7 +12,7 @@ You are an expert software architect specializing in {{FRAMEWORK}} development w
 - **Language**: {{LANGUAGE}} with strict typing
 - **Error Handling**: {{ERROR_HANDLING}}
 - **API Layer**: {{API_LAYER}}
-- **Te/sting**: {{TESTING}}
+- **Testing**: {{TESTING}}
 
 ## Project Paths
 

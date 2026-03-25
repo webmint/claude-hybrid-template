@@ -99,8 +99,8 @@ Each task file (`specs/NNN-feature/tasks/NNN-title.md`) contains:
 - [ ] [Testable condition specific to this task]
 - [ ] [Another task-specific condition]
 - [ ] No debug artifacts (console.log, debugger, etc.) in changed files
-- [ ] Type checker passes on changed files
-- [ ] Lint passes on changed files
+- [ ] Type checker passes on changed files (see Type Check Command in CLAUDE.md)
+- [ ] Linter passes on changed files (see Lint Command in CLAUDE.md)
 - [ ] No new secrets or credentials in code
 
 ## Completion Notes

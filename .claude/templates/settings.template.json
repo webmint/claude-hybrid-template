@@ -21,9 +21,13 @@
   },
   "permissions": {
     "allow": [
+      "Edit",
+      "Write",
       "Read",
       "Glob",
       "Grep",
+      "Bash",
+      "Agent",
       "WebFetch",
       "WebSearch",
       "TaskCreate",
@@ -33,7 +37,7 @@
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__evaluate_script",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs"
+      "mcp__context7__query-docs"
     ]
   }
 }

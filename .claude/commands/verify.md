@@ -18,6 +18,7 @@ Verifies completed tasks against the original specification's acceptance criteri
 2. Read the feature's `plan.md`
 3. Read all task files in `specs/NNN-feature/tasks/`
 4. Read `constitution.md`
+   - **Guard**: If `constitution.md` contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/verify`."
 5. Read `.claude/memory/MEMORY.md`
 
 ## PHASE 2: Acceptance Criteria Check
@@ -58,8 +59,8 @@ Provide the agent with:
 The agent will check: constitution compliance, architecture & patterns, type safety, security basics, code quality, and memory pitfalls.
 
 **Additionally**, run these automated checks and append results to the agent's findings:
-- **Type checker**: Run `tsc --noEmit` (or project equivalent) and report result
-- **Linter**: Run ESLint (or project equivalent) on all changed files and report result
+- **Type checker**: Run the Type Check Command from CLAUDE.md and report result
+- **Linter**: Run the Lint Command from CLAUDE.md on all changed files and report result
 - **Build** (if Build Command is specified in CLAUDE.md): Run the build command and report result. For wrapper mode projects, run inside the Source Root directory. Skip if no Build Command is configured
 - **Scope creep**: Compare changed files against the spec's scope boundaries — flag files outside scope
 - **Documentation**: Check if any task introduced new public APIs or behavior changes that lack docs in `docs/` or inline JSDoc. Flag as Warning. For each documentation gap found, record the specific file path and public API name — this is needed for direct remediation in Phase 10
@@ -112,8 +113,8 @@ If the agent doesn't exist, skip this phase silently.
 **Result**: [ALL PASS / X of Y PASS]
 
 ### Code Quality
-- TypeScript: PASS/FAIL
-- ESLint: PASS/FAIL
+- Type checker: PASS/FAIL
+- Linter: PASS/FAIL
 - Build: PASS/FAIL/SKIP
 - Constitution compliance: PASS/FAIL [details if fail]
 - No scope creep: PASS/FAIL [details if fail]
@@ -150,8 +151,9 @@ If the agent doesn't exist, skip this phase silently.
 ## PHASE 7: Update Spec Status
 
 If all acceptance criteria pass and code quality checks pass:
-1. Update the spec file status to "Complete"
-2. Update the task index README.md with a completion summary
+1. **Task completion cross-check**: Before marking spec Complete, verify all task files in `specs/NNN-feature/tasks/` (excluding README.md) have `Status: Complete`. If any task is not Complete, keep spec as "In Progress" and report: "Spec cannot be marked Complete — Task [N] is still [status]."
+2. Update the spec file status to "Complete"
+3. Update the task index README.md with a completion summary
 
 If issues found:
 1. Keep spec status as "In Progress"

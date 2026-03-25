@@ -35,7 +35,12 @@ Before anything else, check if a previous task execution was interrupted.
 
 Read `.claude/wip.md`. If it does NOT exist, skip to PHASE 1 (normal flow).
 
-If it DOES exist, a previous task was interrupted. Read the WIP marker to determine:
+If it DOES exist, a previous execution was interrupted. First check the `## Command` field:
+- If `Command: execute-task` → this is a previous task execution. Continue with recovery below.
+- If the `## Command` field is **missing** (pre-v3 format) → assume it belongs to the current command. Continue with recovery below.
+- If `Command: fix` or `Command: refactor` → a different command was interrupted. Inform the user: "A previous `/[command]` session was interrupted (see .claude/wip.md). Clear it first by running `/[command]` to resume or recover, or delete `.claude/wip.md` manually to discard it." STOP — do not proceed.
+
+Read the WIP marker to determine:
 - Which task was being executed (feature + task number)
 - Which phase it was in when interrupted
 - What files were being modified
@@ -70,7 +75,7 @@ Options:
 Wait for user to choose. Execute their choice:
 
 **If Resume:**
-- Run `tsc --noEmit`, lint, and the build command (if Build Command is specified in CLAUDE.md) on all files listed in the WIP marker
+- Run the Type Check Command from CLAUDE.md, the Lint Command, and the build command (if Build Command is specified in CLAUDE.md) on all files listed in the WIP marker
 - If they pass, jump to the phase AFTER the interrupted phase (e.g., if interrupted in Phase 3, jump to Phase 4: Mark Complete)
 - If they fail, inform the user — the code is in a broken state. Recommend option 2 (rollback and retry).
 
@@ -182,6 +187,9 @@ If ANY pre-flight check fails, stop and inform the user with specifics.
    ```markdown
    # Work In Progress
 
+   ## Command
+   execute-task
+
    ## Task
    Feature: [NNN-feature-name]
    Task: [N] — [title]
@@ -238,8 +246,8 @@ You are executing Task [N] from an approved task breakdown.
 1. Make ONLY the changes described above — nothing more
 2. Follow the project's constitution (key rules: [relevant rules])
 3. Known pitfalls for this area: [from MEMORY.md]
-4. Every file you change must pass TypeScript compilation
-5. Every file you change must pass ESLint
+4. Every file you change must pass the project's type checker (see Type Check Command in CLAUDE.md)
+5. Every file you change must pass the project's linter (see Lint Command in CLAUDE.md)
 6. Document any new functions/variables you create
 
 ## Contract: What This Task Must Produce
@@ -253,7 +261,7 @@ These postconditions will be independently verified after you complete.
 - Refactor surrounding code
 - Add features not in the task
 - Change files not listed above (unless absolutely necessary for compilation)
-- Skip type checking or linting
+- Skip the project's type checker or linter
 ```
 
 After the agent completes, immediately create a WIP git commit to preserve the work:
@@ -268,8 +276,8 @@ Update `.claude/wip.md` — change Phase to `4 (Mark Complete)`.
 After the agent completes, run verification:
 
 1. **Files changed match task scope**: Check `git diff --name-only` (or `git status` for new files) against the task's file list. If extra files were changed, investigate why.
-2. **TypeScript compiles**: Run `tsc --noEmit` (the PostToolUse hook should catch this, but verify explicitly)
-3. **ESLint passes**: Run lint on all changed files
+2. **Type checker passes**: Run the Type Check Command from CLAUDE.md (e.g. `tsc --noEmit` for TypeScript, `mypy` for Python, `go vet` for Go). The PostToolUse hook should catch this, but verify explicitly.
+3. **Linter passes**: Run the Lint Command from CLAUDE.md on all changed files
 4. **Project builds** (if Build Command is specified in CLAUDE.md): Run the build command. For wrapper mode projects, run inside the Source Root directory. Skip this check if no Build Command is configured.
 5. **Done conditions met**: Check each "Done when" item from the task
 6. **Contract postconditions**: Read the task's `## Contracts → ### Produces` section. For each postcondition, use Grep or Read to verify it holds in the codebase (e.g., verify the export exists, the interface has the expected fields, the function has the expected name). Track pass/fail for each postcondition.
@@ -395,8 +403,8 @@ Provide a concise summary to the user:
 - [file]: [what changed, 1 line]
 
 **Verification**:
-- TypeScript: PASS
-- ESLint: PASS
+- Type checker: PASS
+- Linter: PASS
 - Build: PASS [or SKIP if no build command configured]
 - Done conditions: [all met / exceptions]
 - Contracts: Expects [X/Y] | Produces [X/Y]
@@ -421,11 +429,12 @@ Provide a concise summary to the user:
      git reset --soft [checkpoint-commit-hash]
      git commit -m "feat([feature-name]): Task [N] — [title]"
      ```
+     If the commit fails after the reset (pre-commit hook rejection, etc.), do NOT delete `.claude/wip.md`. Inform the user: "Squash reset was applied but the commit failed. Your changes are staged. Run `git commit` manually to complete, or `git reset HEAD~0` to unstage."
    - If this shows **no commits** (HEAD matches remote) → WIP commits were already pushed → **skip squashing** and keep commits as-is.
 
    Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
 
-2. Delete `.claude/wip.md`
+2. Delete `.claude/wip.md` (only after the final commit succeeds)
 
 The task is now fully committed with a clean single commit and no WIP artifacts.
 

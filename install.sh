@@ -62,6 +62,9 @@ echo "Installing AIDevTeamForge into: $TARGET_DIR"
 
 cp -r "$TEMPLATE_DIR/.claude" "$TARGET_DIR/"
 rm -f "$TARGET_DIR/.claude/settings.local.json"   # project-owned; not part of template install
+rm -f "$TARGET_DIR/.claude/commands/release.md"    # template-repo-only command; not for target projects
+rm -rf "$TARGET_DIR/.claude/memory/"               # template repo's own memory; setup-wizard recreates from template
+mkdir -p "$TARGET_DIR/.claude/memory/"
 cp -r "$TEMPLATE_DIR/specs" "$TARGET_DIR/"
 cp -r "$TEMPLATE_DIR/bugs" "$TARGET_DIR/"
 cp -r "$TEMPLATE_DIR/research" "$TARGET_DIR/"

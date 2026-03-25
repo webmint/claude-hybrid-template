@@ -37,7 +37,12 @@ Before anything else, check if a previous refactoring was interrupted.
 
 Read `.claude/wip.md`. If it does NOT exist, skip to PHASE 1.
 
-If it DOES exist, a previous execution was interrupted. Read the WIP marker to determine:
+If it DOES exist, a previous execution was interrupted. First check the `## Command` field:
+- If `Command: refactor` → this is a previous refactoring. Continue with recovery below.
+- If the `## Command` field is **missing** (pre-v3 format) → assume it belongs to the current command. Continue with recovery below.
+- If `Command: execute-task` or `Command: fix` → a different command was interrupted. Inform the user: "A previous `/[command]` session was interrupted (see .claude/wip.md). Clear it first by running `/[command]` to resume or recover, or delete `.claude/wip.md` manually to discard it." STOP — do not proceed.
+
+Read the WIP marker to determine:
 - What was being refactored
 - Which phase it was in when interrupted
 - What files were being modified
@@ -226,6 +231,9 @@ If ANY pre-flight check fails, stop and inform the user with specifics.
    ```markdown
    # Work In Progress
 
+   ## Command
+   refactor
+
    ## Refactoring
    Target: [file path]
    Goal: [description]
@@ -290,8 +298,8 @@ Update `.claude/wip.md` — change Phase to `5 (Verify)`.
 
 Run verification on all changed files:
 
-1. **TypeScript compiles**: Run `tsc --noEmit` (or project equivalent from CLAUDE.md)
-2. **Linter passes**: Run lint on all changed files
+1. **Type checker passes**: Run the Type Check Command from CLAUDE.md (e.g. `tsc --noEmit` for TypeScript, `mypy` for Python, `go vet` for Go)
+2. **Linter passes**: Run the Lint Command from CLAUDE.md on all changed files
 3. **Project builds** (if Build Command is specified in CLAUDE.md): Run the build command. For wrapper mode projects, run inside the Source Root directory. Skip this check if no Build Command is configured.
 4. **Tests pass**: Run existing tests on the affected code area (if test infrastructure exists)
 5. **Behavior preservation**: Verify that function signatures, exported APIs, and test assertions are still valid
@@ -331,13 +339,14 @@ The agent will check: constitution compliance, architecture & patterns, type saf
 
 **Additional check for refactoring**: Verify the refactored code actually improves on the original (not a lateral move or regression in readability).
 
-**If the agent returns BLOCK or critical issues**:
+**If the agent returns BLOCK or critical issues** (max 1 additional review cycle):
 - Apply the required fixes
 - Re-run verification (Phase 5 checks)
 - Commit:
   ```
   git add [files you modified] .claude/wip.md && git commit -m "[WIP] Refactor: [short description] — review fixes"
   ```
+- If still BLOCKED after this additional cycle, STOP and report the remaining issues to the user. Do not attempt further review cycles.
 
 **If the agent returns APPROVE or only warnings/info** → proceed to Phase 7.
 
@@ -424,7 +433,7 @@ Delete `.claude/wip.md`.
 2. [action]: [result]
 
 **Verification**:
-- TypeScript: PASS
+- Type checker: PASS
 - Linter: PASS
 - Build: PASS [or SKIP if no build command configured]
 - Tests: PASS / [details]
