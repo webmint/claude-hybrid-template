@@ -54,10 +54,8 @@ Comprehensive quality audit of the AIDevTeamForge template system — a set of C
 ### ~~H3. Memory updates have no defined format — becomes unstructured noise~~ RESOLVED
 - **Resolution**: All 4 commands (execute-task Phase 7, fix Phase 9, refactor Phase 9, verify Phase 8) now include the standardized format: `- **[AREA]**: [observation] _(Task N / Feature NNN)_` with instruction to add entries under the matching MEMORY.md section.
 
-### H4. Spec branch numbering and spec directory numbering use independent counters
-- **Location**: `specify.md` lines 35-39 (branches scan `git branch`) vs line 130 (directories scan `specs/`)
-- **Problem**: Branch numbering scans `git branch -a --list '*spec/*'`. Directory numbering scans `specs/`. If someone deletes a spec directory but not the branch (or vice versa), numbers diverge. Branch `spec/003-auth` might correspond to `specs/002-auth/`.
-- **Fix**: Derive branch name from the spec directory number: first create the spec directory (Phase 4), then create branch `spec/NNN-name` using the same NNN.
+### ~~H4. Spec branch numbering and spec directory numbering use independent counters~~ RESOLVED
+- **Resolution**: Branch creation deferred from Phase 0.3 to Phase 4. The spec directory number (from scanning `specs/`) is now the single source of truth — the branch `spec/NNN-name` is created using the same NNN immediately before writing the spec file.
 
 ### H5. `/verify` Phase 9 references `/commit` which doesn't exist
 - **Location**: `verify.md` Phase 9 (line 176)
