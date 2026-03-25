@@ -290,8 +290,8 @@ Update `.claude/wip.md` — change Phase to `5 (Verify)`.
 
 Run verification on all changed files:
 
-1. **TypeScript compiles**: Run `tsc --noEmit` (or project equivalent from CLAUDE.md)
-2. **Linter passes**: Run lint on all changed files
+1. **Type checker passes**: Run the Type Check Command from CLAUDE.md (e.g. `tsc --noEmit` for TypeScript, `mypy` for Python, `go vet` for Go)
+2. **Linter passes**: Run the Lint Command from CLAUDE.md on all changed files
 3. **Project builds** (if Build Command is specified in CLAUDE.md): Run the build command. For wrapper mode projects, run inside the Source Root directory. Skip this check if no Build Command is configured.
 4. **Tests pass**: Run existing tests on the affected code area (if test infrastructure exists)
 5. **Behavior preservation**: Verify that function signatures, exported APIs, and test assertions are still valid
@@ -331,13 +331,14 @@ The agent will check: constitution compliance, architecture & patterns, type saf
 
 **Additional check for refactoring**: Verify the refactored code actually improves on the original (not a lateral move or regression in readability).
 
-**If the agent returns BLOCK or critical issues**:
+**If the agent returns BLOCK or critical issues** (max 1 additional review cycle):
 - Apply the required fixes
 - Re-run verification (Phase 5 checks)
 - Commit:
   ```
   git add [files you modified] .claude/wip.md && git commit -m "[WIP] Refactor: [short description] — review fixes"
   ```
+- If still BLOCKED after this additional cycle, STOP and report the remaining issues to the user. Do not attempt further review cycles.
 
 **If the agent returns APPROVE or only warnings/info** → proceed to Phase 7.
 
@@ -424,7 +425,7 @@ Delete `.claude/wip.md`.
 2. [action]: [result]
 
 **Verification**:
-- TypeScript: PASS
+- Type checker: PASS
 - Linter: PASS
 - Build: PASS [or SKIP if no build command configured]
 - Tests: PASS / [details]

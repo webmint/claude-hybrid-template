@@ -27,6 +27,7 @@ Optional pre-step before `/specify`. Use when requirements are vague or have man
 **Source Root**: If `CLAUDE.md` specifies a Source Root other than `.`, scope all codebase scanning to that path.
 
 1. Read `constitution.md` for architecture constraints
+   - **Guard**: If `constitution.md` contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/clarify`."
 2. Read `.claude/memory/MEMORY.md` for related past work
 3. If an existing spec is referenced, read it
 4. If existing code is relevant, scan it

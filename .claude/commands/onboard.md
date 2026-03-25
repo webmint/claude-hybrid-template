@@ -56,7 +56,7 @@ Based on total source file count:
 
 ## PHASE 2: Execute Onboarding Scan
 
-Launch the tech-writer agent using the Agent tool (Task tool) with the prompt built below. The tech-writer does ALL the heavy lifting.
+Launch the tech-writer agent using the Agent tool with the prompt built below. The tech-writer does ALL the heavy lifting.
 
 **CRITICAL**: The tech-writer agent prompt must include:
 1. The project brief from Phase 1.1
@@ -131,7 +131,7 @@ You are scanning a potentially large codebase. Context is a finite resource. Fol
 
 #### Subagent Usage (for 50+ file projects)
 
-When the scan strategy requires subagents, launch them using the Agent tool (Task tool). Each subagent scans ONE module.
+When the scan strategy requires subagents, launch them using the Agent tool. Each subagent scans ONE module.
 
 **Subagent prompt template:**
 ```

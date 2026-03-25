@@ -79,7 +79,8 @@
     "description": "Files to copy only if they don't exist in the target project",
     "patterns": [
       "specs/.gitkeep",
-      "bugs/.gitkeep"
+      "bugs/.gitkeep",
+      "research/.gitkeep"
     ]
   }
 }

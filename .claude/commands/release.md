@@ -94,6 +94,14 @@ Skip for most releases — install.sh rarely changes.
 
 Usually already modified as part of the feature work. Check if the version-related display or changelog excerpt logic needs adjustment. Skip if no update.sh behavioral changes.
 
+### 5.5: CLAUDE.template.md and storage-rules.md
+
+Update if any of these changed:
+- **CLAUDE.template.md**: New or renamed commands → update Workflow Commands section. Changed artifact storage paths → update Artifact Storage section. New agents or agent selection changes → update Available Agents description. Changed quality gates → update Enforced Quality Gates section.
+- **storage-rules.md**: New storage conventions, changed file formats, new directory structures, changed file lifecycle.
+
+Skip if changes are purely internal to command logic without affecting the user-facing template output.
+
 ## PHASE 6: Summary
 
 Present what was done:

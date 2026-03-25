@@ -10,6 +10,8 @@ This file provides guidance to Claude Code when working with code in this reposi
 **Language**: {{LANGUAGE}}
 **Build Tool**: {{BUILD_TOOL}}
 **Build Command**: {{BUILD_COMMAND}}
+**Type Check Command**: {{TYPE_CHECK_COMMAND}}
+**Lint Command**: {{LINT_COMMAND}}
 **Source Root**: {{SOURCE_ROOT}}
 
 {{WRAPPER_MODE_SECTION}}
@@ -37,7 +39,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ```
 /setup-wizard → /constitute → /onboard → /research → /clarify → /specify → /plan → /breakdown → /execute-task → /verify
-   (once)         (once)       (once)    (optional)  (optional)  (per feature)         (auto)      (per task)     (per task)
+   (once)         (once)       (once)    (optional)  (optional)  (per feat)  (per feat) (per feat)   (per task)    (per feat)
 ```
 
 ### `/research "topic or idea"` (optional)

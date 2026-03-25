@@ -227,8 +227,8 @@ Update `.claude/wip.md` — change Phase to `5 (Verify)`.
 
 Run verification on all changed files:
 
-1. **TypeScript compiles**: Run `tsc --noEmit` (or project equivalent from CLAUDE.md)
-2. **Linter passes**: Run lint on all changed files
+1. **Type checker passes**: Run the Type Check Command from CLAUDE.md (e.g. `tsc --noEmit` for TypeScript, `mypy` for Python, `go vet` for Go)
+2. **Linter passes**: Run the Lint Command from CLAUDE.md on all changed files
 3. **Project builds** (if Build Command is specified in CLAUDE.md): Run the build command. For wrapper mode projects, run inside the Source Root directory. Skip this check if no Build Command is configured.
 4. **Bug is actually fixed**: Verify the root cause identified in Phase 2 is addressed by the change
 5. **No regressions**: Check that the fix doesn't break the obvious happy path
@@ -366,7 +366,7 @@ Delete `.claude/wip.md`.
 - [file]: [what changed, 1 line]
 
 **Verification**:
-- TypeScript: PASS
+- Type checker: PASS
 - Linter: PASS
 - Build: PASS [or SKIP if no build command configured]
 - Code review: [APPROVE / issues addressed]

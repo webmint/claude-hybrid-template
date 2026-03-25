@@ -238,8 +238,8 @@ You are executing Task [N] from an approved task breakdown.
 1. Make ONLY the changes described above — nothing more
 2. Follow the project's constitution (key rules: [relevant rules])
 3. Known pitfalls for this area: [from MEMORY.md]
-4. Every file you change must pass TypeScript compilation
-5. Every file you change must pass ESLint
+4. Every file you change must pass the project's type checker (see Type Check Command in CLAUDE.md)
+5. Every file you change must pass the project's linter (see Lint Command in CLAUDE.md)
 6. Document any new functions/variables you create
 
 ## Contract: What This Task Must Produce
@@ -253,7 +253,7 @@ These postconditions will be independently verified after you complete.
 - Refactor surrounding code
 - Add features not in the task
 - Change files not listed above (unless absolutely necessary for compilation)
-- Skip type checking or linting
+- Skip the project's type checker or linter
 ```
 
 After the agent completes, immediately create a WIP git commit to preserve the work:
@@ -268,8 +268,8 @@ Update `.claude/wip.md` — change Phase to `4 (Mark Complete)`.
 After the agent completes, run verification:
 
 1. **Files changed match task scope**: Check `git diff --name-only` (or `git status` for new files) against the task's file list. If extra files were changed, investigate why.
-2. **TypeScript compiles**: Run `tsc --noEmit` (the PostToolUse hook should catch this, but verify explicitly)
-3. **ESLint passes**: Run lint on all changed files
+2. **Type checker passes**: Run the Type Check Command from CLAUDE.md (e.g. `tsc --noEmit` for TypeScript, `mypy` for Python, `go vet` for Go). The PostToolUse hook should catch this, but verify explicitly.
+3. **Linter passes**: Run the Lint Command from CLAUDE.md on all changed files
 4. **Project builds** (if Build Command is specified in CLAUDE.md): Run the build command. For wrapper mode projects, run inside the Source Root directory. Skip this check if no Build Command is configured.
 5. **Done conditions met**: Check each "Done when" item from the task
 6. **Contract postconditions**: Read the task's `## Contracts → ### Produces` section. For each postcondition, use Grep or Read to verify it holds in the codebase (e.g., verify the export exists, the interface has the expected fields, the function has the expected name). Track pass/fail for each postcondition.
@@ -395,8 +395,8 @@ Provide a concise summary to the user:
 - [file]: [what changed, 1 line]
 
 **Verification**:
-- TypeScript: PASS
-- ESLint: PASS
+- Type checker: PASS
+- Linter: PASS
 - Build: PASS [or SKIP if no build command configured]
 - Done conditions: [all met / exceptions]
 - Contracts: Expects [X/Y] | Produces [X/Y]
