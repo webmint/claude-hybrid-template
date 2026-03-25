@@ -166,10 +166,11 @@ Present this to the user. **HARD GATE**: Wait for user confirmation before apply
 
 Before writing ANY code, verify:
 
-1. **Constitution compliance**: Does the planned fix violate any NON-NEGOTIABLE rules?
-2. **Memory check**: Does MEMORY.md have any warnings about similar changes or this area of code?
-3. **File state check**: Are the target files in a clean state? (`git status`)
-4. **Scope constraint**: The fix must touch ONLY the files identified in the diagnosis. If more files need changing, re-assess scope (Phase 1.3).
+1. **Constitution populated**: If `constitution.md` contains `_Run /constitute to populate_`, stop immediately and inform the user: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/fix`."
+2. **Constitution compliance**: Does the planned fix violate any NON-NEGOTIABLE rules?
+3. **Memory check**: Does MEMORY.md have any warnings about similar changes or this area of code?
+4. **File state check**: Are the target files in a clean state? (`git status`)
+5. **Scope constraint**: The fix must touch ONLY the files identified in the diagnosis. If more files need changing, re-assess scope (Phase 1.3).
 
 If ANY pre-flight check fails, stop and inform the user with specifics.
 

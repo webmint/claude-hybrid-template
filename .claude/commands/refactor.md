@@ -206,11 +206,12 @@ Wait for user response. Record which items were approved. If the user cancels, e
 
 Before writing ANY code, verify:
 
-1. **Constitution compliance**: Does the planned refactoring comply with all NON-NEGOTIABLE rules?
-2. **Behavior preservation**: Verify that approved changes are genuinely behavior-preserving. If any change would alter observable behavior, flag it and remove from scope
-3. **Memory check**: Does MEMORY.md have any warnings about similar changes or this area of code?
-4. **File state check**: Are the target files in a clean state? (`git status`)
-5. **Scope constraint**: The refactoring must touch ONLY the files identified in the proposal. If more files need changing, re-assess scope (Phase 1.5)
+1. **Constitution populated**: If `constitution.md` contains `_Run /constitute to populate_`, stop immediately and inform the user: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/refactor`."
+2. **Constitution compliance**: Does the planned refactoring comply with all NON-NEGOTIABLE rules?
+3. **Behavior preservation**: Verify that approved changes are genuinely behavior-preserving. If any change would alter observable behavior, flag it and remove from scope
+4. **Memory check**: Does MEMORY.md have any warnings about similar changes or this area of code?
+5. **File state check**: Are the target files in a clean state? (`git status`)
+6. **Scope constraint**: The refactoring must touch ONLY the files identified in the proposal. If more files need changing, re-assess scope (Phase 1.5)
 
 If ANY pre-flight check fails, stop and inform the user with specifics.
 

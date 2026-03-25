@@ -153,13 +153,14 @@ Verify:
 
 Before writing ANY code, verify:
 
-1. **Constitution compliance**: Does the planned change violate any NON-NEGOTIABLE rules?
-2. **Memory check**: Does MEMORY.md have any warnings about similar changes?
-3. **File state check**:
+1. **Constitution populated**: If `constitution.md` contains `_Run /constitute to populate_`, stop immediately and inform the user: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/execute-task`."
+2. **Constitution compliance**: Does the planned change violate any NON-NEGOTIABLE rules?
+3. **Memory check**: Does MEMORY.md have any warnings about similar changes?
+4. **File state check**:
    - **Existing files**: Are the target files in the expected state? (No unexpected changes since the breakdown was created)
    - **New files (greenfield)**: Does the target directory exist? If not, it should be created as part of this task or a prior task
-4. **Type safety**: Read the type definitions involved and verify the change is type-safe on paper. For greenfield, verify the proposed types align with the constitution's patterns
-5. **Contract preconditions**: Read the task's `## Contracts → ### Expects` section. For each precondition:
+5. **Type safety**: Read the type definitions involved and verify the change is type-safe on paper. For greenfield, verify the proposed types align with the constitution's patterns
+6. **Contract preconditions**: Read the task's `## Contracts → ### Expects` section. For each precondition:
    - Use Grep or Read to verify the condition holds in the current codebase (e.g., check that an export exists, an interface has expected fields, a function exists with the expected name)
    - If a precondition fails:
      - Identify which upstream task should have produced it (check the task's "Depends on" and the upstream task's "Produces")

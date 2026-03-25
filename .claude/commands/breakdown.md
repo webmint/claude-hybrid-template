@@ -24,6 +24,7 @@ Read these files in order:
 2. The feature's `plan.md` — technical decisions and file impact
 3. The feature's supporting docs if they exist: `research.md`, `data-model.md`, `contracts.md`
 4. `constitution.md` — architecture rules and constraints
+   - **Guard**: If `constitution.md` contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/breakdown`."
 5. `.claude/memory/MEMORY.md` — past lessons
 6. `CLAUDE.md` — project structure and available agents
 

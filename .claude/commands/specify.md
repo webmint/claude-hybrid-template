@@ -79,6 +79,7 @@ Read the user's description from `$ARGUMENTS`.
 
 Before doing ANY analysis, read these files for context:
 1. `constitution.md` — project rules and patterns
+   - **Guard**: If `constitution.md` contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/specify`."
 2. `.claude/memory/MEMORY.md` — past lessons and known pitfalls
 3. `CLAUDE.md` — project structure and commands
 

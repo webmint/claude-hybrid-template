@@ -167,6 +167,8 @@ Save to `specs/[feature-name]/plan.md`:
 
 ## Constitution Check
 
+**Guard**: If `constitution.md` contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/plan`."
+
 [Verify the planned approach doesn't violate any NON-NEGOTIABLE rules]
 - Rule X: [compliant / requires attention]
 - Rule Y: [compliant / requires attention]
