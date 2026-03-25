@@ -66,10 +66,8 @@ Comprehensive quality audit of the AIDevTeamForge template system — a set of C
 ### ~~H7. Date format inconsistency across commands~~ RESOLVED
 - **Resolution**: Standardized all date formats to ISO 8601 (`YYYY-MM-DD`). Removed "Ukrainian time" references from plan.md, research.md, and clarify.md. Updated research filename format from `DD-MM-YY` to `YYYY-MM-DD`.
 
-### H8. `/onboard` Phase 3.3 tries to update CLAUDE.md with content that's already there
-- **Location**: `onboard.md` lines 466-478
-- **Problem**: Phase 3.3 says "Update CLAUDE.md to add `/onboard` to the workflow commands section." But `CLAUDE.template.md` already has `/onboard` in the workflow diagram (line 39) and description (lines 72-73). Claude will either add a duplicate or waste context checking.
-- **Fix**: Remove Phase 3.3 from onboard.md.
+### ~~H8. `/onboard` Phase 3.3 tries to update CLAUDE.md with content that's already there~~ RESOLVED
+- **Resolution**: Removed Phase 3.3 ("Update Workflow References") from onboard.md. The `/onboard` entry already exists in `CLAUDE.template.md`.
 
 ---
 
