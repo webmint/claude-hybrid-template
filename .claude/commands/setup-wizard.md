@@ -195,6 +195,8 @@ Use AskUserQuestion for each category. Batch related questions. Example flow:
 - opus — Most capable, recommended (default)
 - sonnet — Faster, lower cost, good fallback if opus rate-limited
 
+**Model strategy**: The user's choice applies to 13 of 14 agents via the `{{AGENT_MODEL}}` placeholder. The tech-writer agent is hardcoded to `sonnet` regardless of this choice — documentation generation doesn't require opus-level reasoning and benefits from sonnet's faster output speed.
+
 (Default to "opus" if the user skips or doesn't have a preference.)
 
 ## STEP 3: Generate Configuration Files

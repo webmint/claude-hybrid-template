@@ -27,7 +27,7 @@ The wizard will:
    - Detect your project structure (or interview you for greenfield projects)
    - Ask clarifying questions about your stack
    - Ask whether commits should include AI co-author attribution (default: no)
-   - Ask which model agents should use (default: opus)
+   - Ask which model agents should use (default: opus) — applies to 13 agents; tech-writer is always sonnet for speed
    - Generate `CLAUDE.md`, `constitution.md`, agents, hooks, and memory
    - Remove the templates directory when done
 

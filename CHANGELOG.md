@@ -5,6 +5,18 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.5] - 2026-03-25
+
+### Fixed
+- **L1**: Documented agent model strategy in setup-wizard and README — explains why 13 agents use configurable `{{AGENT_MODEL}}` while tech-writer is hardcoded to `sonnet`
+- **L6**: Removed undocumented `memory: project` field from runtime-debugger agent template — not a standard Claude Code frontmatter field, no other agent used it
+
+### Removed
+- **L3**: Deleted unused `spec.template.md` — `/specify` generates specs from an inline format, never reads this template
+
+### Changed
+- Template version: 1.16.4 → 1.16.5
+
 ## [1.16.4] - 2026-03-25
 
 ### Fixed
