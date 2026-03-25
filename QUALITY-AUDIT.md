@@ -45,11 +45,8 @@ Comprehensive quality audit of the AIDevTeamForge template system — a set of C
 
 ## HIGH — Will cause confusion or significantly degraded behavior
 
-### H1. No test execution in `/execute-task` verification pipeline
-- **Location**: `execute-task.md` Phase 3.3 (lines 265-298)
-- **Problem**: Post-execution verification checks: tsc, lint, build, done-conditions, contracts. It does NOT run tests. The `/refactor` command (Phase 5, line 295) runs tests, but `/execute-task` — the primary execution pipeline — does not.
-- **Impact**: Code passes all gates while breaking existing tests. Tests are only checked during `/verify` (end of feature), which may be 10+ tasks later. This is the #1 source of regressions in real projects.
-- **Fix**: Add to Phase 3.3: "6. **Run affected tests**: If test files exist for the changed areas (search for `*.test.*`, `*.spec.*` in the same directories), run them. Test failures enter the self-repair loop."
+### ~~H1. No test execution in `/execute-task` verification pipeline~~ RESOLVED
+- **Resolution**: Phase 3.3 now includes step 7 ("Run affected tests") which searches for `*.test.*` / `*.spec.*` files in changed directories and runs them if a test runner is available. Test failures enter the self-repair loop alongside tsc, lint, and build errors.
 
 ### H2. `/breakdown` agent assignment table only covers 6 of 14 agent types
 - **Location**: `breakdown.md` lines 84-93
