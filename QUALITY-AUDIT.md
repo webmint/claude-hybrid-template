@@ -48,16 +48,8 @@ Comprehensive quality audit of the AIDevTeamForge template system — a set of C
 ### ~~H1. No test execution in `/execute-task` verification pipeline~~ RESOLVED
 - **Resolution**: Phase 3.3 now includes step 7 ("Run affected tests") which searches for `*.test.*` / `*.spec.*` files in changed directories and runs them if a test runner is available. Test failures enter the self-repair loop alongside tsc, lint, and build errors.
 
-### H2. `/breakdown` agent assignment table only covers 6 of 14 agent types
-- **Location**: `breakdown.md` lines 84-93
-- **Problem**: Assignment table maps to: architect, frontend-engineer, backend-engineer, runtime-debugger, performance-analyst, security-reviewer. Missing: db-engineer, api-designer, design-auditor, migration-engineer, devops-engineer, tech-writer, qa-engineer, code-reviewer.
-- **Impact**: For a database migration task (common!), Claude has no guidance and defaults to architect. For CI/CD setup, no guidance either.
-- **Fix**: Expand the table:
-  - Database schemas, migrations, queries → `db-engineer`
-  - API contract design, OpenAPI specs → `api-designer`
-  - CI/CD, Docker, deployment config → `devops-engineer`
-  - Data migration, backward compatibility → `migration-engineer`
-  - Accessibility, design system compliance → `design-auditor`
+### ~~H2. `/breakdown` agent assignment table only covers 6 of 14 agent types~~ RESOLVED
+- **Resolution**: Added 5 execution-capable agent types to the assignment table: db-engineer, api-designer, devops-engineer, migration-engineer, design-auditor. The remaining 3 (tech-writer, qa-engineer, code-reviewer) are verification agents that run automatically and don't need task assignment rows.
 
 ### H3. Memory updates have no defined format — becomes unstructured noise
 - **Location**: `execute-task.md` Phase 7, `fix.md` Phase 9, `refactor.md` Phase 9, `verify.md` Phase 8
