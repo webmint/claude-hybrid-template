@@ -523,7 +523,16 @@ After Phase 7.5 completes for the current task:
       - **Review**: show `git diff` for the preceding tasks' commits. After user reviews, ask again: Continue or Pause.
       - **Pause**: clean up WIP state (delete `.claude/wip.md`), stop execution. Report completed tasks so far.
    b. **Context health**: Read the "Tasks completed this session" count from session-state.md.
-      - If heavy (6+ tasks): **auto-compact** before continuing. Run `/compact` with these preserved items: (1) Current task statuses from `specs/[feature]/tasks/README.md`, (2) All entries from `.claude/memory/MEMORY.md`, (3) Constitution rules referenced during this session, (4) Next task's file list and change details from its task file, (5) Session state from `.claude/session-state.md`, (6) Phase 5 documentation obligation: every task MUST run the tech-writer agent and verify docs before Phase 6. Do NOT ask — compact and continue.
+      - If heavy (6+ tasks): **pause execution** and present the compaction command to the user:
+        ```
+        🔴 CONTEXT HEALTH PAUSE — [N] tasks completed this session (heavy context load).
+        Please run /compact before continuing:
+
+        /compact Preserve: (1) Current task statuses from specs/[feature]/tasks/README.md, (2) All entries from .claude/memory/MEMORY.md, (3) Constitution rules referenced during this session, (4) Next task's file list and change details from its task file, (5) Session state from .claude/session-state.md, (6) Phase 5 documentation obligation: every task MUST run the tech-writer agent and verify docs before Phase 6. Discard: file contents already committed, old error outputs, superseded diffs, resolved discussions.
+
+        Then resume with: /execute-task [remaining-task-ids]
+        ```
+        Stop execution here. Do NOT continue to the next task without user-initiated compaction.
       - If light/moderate: continue without compaction.
    c. **Loop back** to Phase 1 for the next task in the queue. The task queue carries over — do not re-parse `$ARGUMENTS`.
 
@@ -552,6 +561,6 @@ When all queued tasks are complete (or execution stops due to failure/blocked de
 6. **Hard stop on repair failure** — if all 3 repair attempts fail, stop the entire execution chain (including remaining queued tasks). Do not proceed with broken state.
 7. **Verify everything** — trust but verify. Even if hooks ran, run explicit verification after the agent finishes
 8. **Track deviations** — if the actual changes differ from the planned changes, document WHY in the task file's Completion Notes
-9. **Context hygiene** — always fully overwrite .claude/session-state.md after each task (never append). Keep it under 40 lines. Recommend /compact at moderate load. In multi-task mode, auto-compact at heavy load (6+ tasks) without asking.
+9. **Context hygiene** — always fully overwrite .claude/session-state.md after each task (never append). Keep it under 40 lines. Recommend /compact at moderate load. In multi-task mode, pause execution at heavy load (6+ tasks) and ask the user to run /compact before resuming.
 10. **Documentation is non-negotiable** — Phase 5 MUST run for every task, including in multi-task mode. The tech-writer agent must be invoked and its output verified (new public APIs must have inline docs). Skipping Phase 5 is a workflow violation equivalent to skipping verification.
 11. **Crash safety** — always write .claude/wip.md before starting execution and delete it only after the final commit. If wip.md exists at the start of execute-task, enter recovery flow. Never delete wip.md without either completing the task or explicitly rolling back.
