@@ -5,6 +5,42 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-03-25
+
+### Added
+- **Language-agnostic verification**: New `Type Check Command` and `Lint Command` fields in CLAUDE.template.md — commands now reference these fields instead of hardcoded `tsc --noEmit` / ESLint, supporting Python/Go/Rust/any language
+- **WIP cross-command safety**: `## Command` field in `.claude/wip.md` identifies which command (execute-task, fix, refactor) created it — prevents cross-command recovery confusion with backward compatibility for pre-v3 wip.md files
+- **Permissions**: Edit, Write, Bash, Agent added to `settings.template.json` default permissions — workflow no longer requires dozens of manual approval prompts per task
+- **Constitution guard**: Added to `/verify` and `/clarify` — all 8 commands that read constitution now check for unpopulated placeholder
+- **Framework detection**: Astro, Remix, Deno, Bun auto-detection in `/setup-wizard` Step 1
+- **Review cycle cap**: `/refactor` Phase 6 code review now capped at 1 additional cycle (matching `/fix`)
+- **Verify task cross-check**: `/verify` Phase 7 now confirms all tasks are Complete before marking spec Complete
+- **Fix file overlap warning**: `/fix` Phase 1.2 warns when pending spec tasks target the same files
+- **Release template check**: `/release` Phase 5.5 checks CLAUDE.template.md and storage-rules.md for needed updates
+- **Squash error handling**: execute-task/fix/refactor now preserve wip.md if the final commit fails after `git reset --soft`
+
+### Changed
+- All verification steps in execute-task, fix, refactor, verify, breakdown, storage-rules now reference "Type Check Command from CLAUDE.md" and "Lint Command from CLAUDE.md" instead of TypeScript/ESLint
+- CLAUDE.template.md Automated Guards section now language-agnostic ("type check + lint + build")
+- CLAUDE.template.md workflow diagram labels corrected (each command has its own label)
+- CLAUDE.template.md Crash Recovery section documents `## Command` field and cross-command detection
+- CLAUDE.template.md PostToolUse hook description documents lint command asymmetry (hook runs type checker only; linter runs during explicit verification)
+- `update.sh` three-way merge: baseline only updated on successful merge — previously updated unconditionally, silently losing template changes after conflicts
+- `update.sh` `migrate_project_config()`: now extracts TYPE_CHECK_COMMAND, LINT_COMMAND, PROJECT_MODE with language-based fallback detection
+- `update.sh`: replaced bash 4+ `${language,,}` with portable `tr '[:upper:]' '[:lower:]'` for macOS bash 3.2 compatibility
+- `install.sh`: now removes `release.md` (template-repo-only command) and cleans `.claude/memory/` (template-repo-specific files) after copy
+- `settings.template.json`: corrected context7 MCP tool name from `get-library-docs` to `query-docs`
+- `template-manifest.json`: added `research/.gitkeep` to `copyIfMissing`
+- `setup-wizard.md`: TYPE_CHECK_COMMAND and LINT_COMMAND added to required keys and example project-config.json
+- Template version: 1.16.5 → 1.17.0
+
+### Fixed
+- `architect.template.md` line 15: `Te/sting` typo → `Testing`
+- `onboard.md`: removed legacy "(Task tool)" parenthetical references
+
+### Removed
+- Dead `merge_sections()` Perl function (~100 lines) from `update.sh` — replaced by git merge-file three-way merge
+
 ## [1.16.5] - 2026-03-25
 
 ### Fixed
