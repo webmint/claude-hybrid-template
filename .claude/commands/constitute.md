@@ -269,7 +269,11 @@ Now proceed to **PHASE 3** (User Review) below.
 
 ## PHASE 3: User Review (both modes)
 
-Write the constitution to `constitution.md` at project root using this structure:
+Write the constitution to `constitution.md` at project root.
+
+First, read `.claude/templates/constitution.template.md`. All sections tagged `[universal]` (3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 6.1, 6.2, 6.3, 6.4) must be copied **verbatim** into the generated constitution. Only populate `[project-specific]` sections from your analysis and interview answers.
+
+Use this structure:
 
 ```markdown
 # Project Constitution — [Project Name]
@@ -315,19 +319,37 @@ These rules MUST be followed in every code change. Violating these rules require
 ### 3.3 Naming Conventions
 [All naming rules]
 
-### 3.4 Testing Requirements
+### 3.4 Testing Requirements [project-specific]
 [What must be tested, where tests live, patterns]
+
+### 3.5 Universal Code Quality [universal]
+[Copied verbatim from template]
+
+### 3.6 Design Principles [universal]
+[Copied verbatim from template]
+
+### 3.7 Check Before You Build [universal]
+[Copied verbatim from template]
 
 ## 4. Patterns & Anti-Patterns
 
-### 4.1 ALWAYS Do
-[Required patterns — each tagged with source]
+### 4.1 ALWAYS Do [universal]
+[Copied verbatim from template]
 
-### 4.2 NEVER Do
-[Forbidden patterns — each tagged with source]
+### 4.1.1 ALWAYS Do [project-specific]
+[Project-specific patterns — each tagged with source]
 
-### 4.3 PREFER
-[Preferred approaches — each tagged with source]
+### 4.2 NEVER Do [universal]
+[Copied verbatim from template]
+
+### 4.2.1 NEVER Do [project-specific]
+[Project-specific anti-patterns — each tagged with source]
+
+### 4.3 PREFER [universal]
+[Copied verbatim from template]
+
+### 4.3.1 PREFER [project-specific]
+[Project-specific preferences — each tagged with source]
 
 ## 5. Domain Rules
 
@@ -342,20 +364,23 @@ These rules MUST be followed in every code change. Violating these rules require
 
 ## 6. Workflow Rules
 
-### 6.1 Minimal Changes
-Every code change MUST impact as little code as possible.
+### 6.1 Minimal Changes [universal]
+[Copied verbatim from template]
 
-### 6.2 Semantic Understanding
-Before renaming or replacing any identifier, VERIFY:
-1. What the identifier semantically means
-2. All callers/consumers of the identifier
-3. That the new name correctly represents the concept
+### 6.2 Semantic Understanding [universal]
+[Copied verbatim from template]
 
-### 6.3 Deprecation Handling
+### 6.3 Read-First Principle [universal]
+[Copied verbatim from template]
+
+### 6.4 Documentation [universal]
+[Copied verbatim from template]
+
+### 6.5 Deprecation Handling [project-specific]
 [How to handle deprecated fields/methods/APIs]
 
-### 6.4 Documentation
-[What must be documented, where, format]
+### 6.6 Project-Specific Workflow [project-specific]
+[Any project-specific workflow rules]
 ```
 
 If in greenfield mode, also include **Section 7: Scaffolding Guide** as described above.

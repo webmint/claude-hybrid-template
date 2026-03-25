@@ -38,11 +38,8 @@ Comprehensive quality audit of the AIDevTeamForge template system — a set of C
 ### ~~C6. `execute-task` Phase 6 squash uses `git reset --soft` — rewrites history~~ RESOLVED
 - **Resolution**: All 3 squash sections (`execute-task.md`, `fix.md`, `refactor.md`) now check `git log --oneline origin/$(git branch --show-current)..HEAD` before squashing. If WIP commits were already pushed, squashing is skipped to avoid rewriting shared history.
 
-### C7. `/constitute` overwrites constitution.md entirely — losing ALL universal rules from the template
-- **Location**: `constitute.md` Phase 3 vs `constitution.template.md` sections 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 6.1-6.4
-- **Problem**: The constitution template has extensive, carefully crafted universal rules: no dead code, SOLID/DRY/KISS principles, early returns, check-before-build, patterns with code examples, etc. But `/constitute` Phase 3 says "Write `constitution.md`" using a section structure — it does NOT instruct Claude to preserve the universal sections from the template.
-- **Impact**: Claude generates a fresh constitution that may lack the quality standards from the template. The universal rules (sections 3.5-3.7, 4.1-4.3, 6.1-6.4) — representing substantial engineering wisdom — get replaced with whatever Claude generates, which may be weaker, less specific, or missing entirely.
-- **Fix**: Add to `/constitute` Phase 3: "Read `.claude/templates/constitution.template.md`. Copy all sections tagged `[universal]` (3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 6.1-6.4) verbatim into the generated constitution. Only populate `[project-specific]` sections from analysis/interview."
+### ~~C7. `/constitute` overwrites constitution.md entirely — losing ALL universal rules from the template~~ RESOLVED
+- **Resolution**: Phase 3 now instructs Claude to read `constitution.template.md` and copy all `[universal]` sections (3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 6.1-6.4) verbatim. The section structure was updated to include all 10 universal sections alongside project-specific sections.
 
 ---
 
