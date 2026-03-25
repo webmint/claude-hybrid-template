@@ -404,6 +404,7 @@ The keys must be the exact placeholder names (without `{{ }}`). Example:
   "BUILD_TOOL": "next",
   "BUILD_COMMAND": "npm run build",
   "SOURCE_ROOT": ".",
+  "PROJECT_MODE": "greenfield",
   "ARCHITECTURE": "Feature-based/Modular",
   "ERROR_HANDLING": "Try/catch with custom error types",
   "API_LAYER": "REST",
@@ -421,7 +422,7 @@ The keys must be the exact placeholder names (without `{{ }}`). Example:
 }
 ```
 
-**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `SOURCE_ROOT`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `AGENT_MODEL`.
+**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `AGENT_MODEL`.
 
 Use the exact same values you substituted into the templates. For multi-line values, use `\n` for newlines in the JSON string. For values that don't apply, use `"N/A"` (not empty string).
 

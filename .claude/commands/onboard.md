@@ -9,7 +9,7 @@ This is a **one-time command** run after `/constitute`. It delegates ALL scannin
 1. `/setup-wizard` must have been run — `CLAUDE.md`, agents, settings, memory must exist
 2. `/constitute` must have been run — `constitution.md` must exist and be approved
 3. `docs/` folder must exist (created by setup wizard)
-4. This is an **existing project** (6+ source files) — for greenfield projects, docs are built incrementally via `/execute-task`
+4. This is an **existing project** — check `.claude/project-config.json` for `"PROJECT_MODE": "existing"`. If missing, verify 6+ source files exist. For greenfield projects, docs are built incrementally via `/execute-task`
 
 If any prerequisite is missing, inform the user and suggest running the missing command first.
 

@@ -15,9 +15,8 @@ If any prerequisite is missing, inform the user and suggest running `/setup-wiza
 Before starting, determine which mode to use:
 
 1. **Read `CLAUDE.md`** to check the **Source Root** field. If it is not `.`, this is a wrapper project — scan the Source Root path instead of the workspace root for all source code operations.
-2. **Count source files** in the Source Root (exclude `node_modules`, `.git`, `dist`, `build`, `__pycache__`, `.next`, `.nuxt`, `vendor`)
-3. If there are **fewer than 10 source files** (or the project has only boilerplate/scaffold files like a fresh `create-vite` or `create-next-app`), use **GREENFIELD MODE**
-4. If there are **10+ meaningful source files**, use **EXISTING CODEBASE MODE**
+2. **Check `.claude/project-config.json`** for a `PROJECT_MODE` field. If it exists and equals `"greenfield"` or `"existing"`, use that mode and skip step 3.
+3. **Fallback** (no config or missing field): Count source files in the Source Root (exclude `node_modules`, `.git`, `dist`, `build`, `__pycache__`, `.next`, `.nuxt`, `vendor`). If **0-5 source files** (or only scaffold boilerplate), use **GREENFIELD MODE**. If **6+ meaningful source files**, use **EXISTING CODEBASE MODE**.
 
 Inform the user which mode you're using:
 - Greenfield: "This looks like a new project. I'll build the constitution from your preferences and framework best practices."
