@@ -66,7 +66,7 @@ Executes a single task from the breakdown using the assigned specialized agent. 
 5. Memory update
 
 ### `/verify [spec-file]`
-Verifies all completed tasks against the spec's acceptance criteria. Performs code review against constitution rules. Updates memory with lessons learned. Automatically triggers `/summarize` when verdict is APPROVED.
+Verifies all completed tasks against the spec's acceptance criteria. When AC verification is enabled (`AC_VERIFICATION` in project-config.json), launches the **ac-verifier** agent to test acceptance criteria against the running app via Chrome DevTools MCP and/or API calls — falls back to code reading when MCP is not available. Performs code review against constitution rules. Updates memory with lessons learned. Automatically triggers `/summarize` when verdict is APPROVED.
 
 ### `/summarize [spec-file]`
 Generates a concise, PR-ready summary of a completed feature. Reads spec, plan, tasks, and git history. Saves to `specs/[feature]/summary.md`. Runs automatically after `/verify` approves.

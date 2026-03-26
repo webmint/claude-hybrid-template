@@ -5,6 +5,20 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] - 2026-03-26
+
+### Added
+- **`ac-verifier` agent template**: New agent that verifies acceptance criteria against a running application. Classifies each AC item as frontend (Chrome MCP), backend (API/curl), or manual, then systematically tests each one and returns a structured pass/fail report with evidence
+- **Setup wizard Question 9**: AC verification mode selection — Auto (browser + API with fallback), Browser only, API only, or Off. Includes auto-detection of dev server URL and API base URL from package.json/framework defaults
+- **3 new config keys**: `AC_VERIFICATION` (mode), `AC_VERIFICATION_URL` (dev server), `AC_VERIFICATION_API_BASE` (API endpoint base) — stored in project-config.json
+- **MCP readiness checks**: `/execute-task` (Phase 1.3), `/fix` (Phase 1.1.5), and `/refactor` (Phase 1.1.5) now probe Chrome DevTools MCP at startup and display an informational warning if not available — non-blocking
+- **13 new Chrome DevTools MCP permissions** in settings template: `navigate_page`, `take_snapshot`, `list_pages`, `select_page`, `click`, `fill`, `fill_form`, `wait_for`, `press_key`, `hover`, `list_console_messages`, `list_network_requests`, `get_network_request`
+
+### Changed
+- **`/verify` Phase 2 rewritten**: Now supports three paths — ac-verifier agent (when enabled + MCP available), code-reading fallback (when MCP unavailable or mode is "off"), and graceful degradation between them. Adds MCP availability probe and structured result merging with Category column
+- **CLAUDE.template.md**: Updated `/verify` description to mention AC verification capability
+- Template version: 1.20.0 → 1.21.0
+
 ## [1.20.0] - 2026-03-26
 
 ### Added

@@ -27,23 +27,67 @@ Verifies completed tasks against the original specification's acceptance criteri
 
 ## PHASE 2: Acceptance Criteria Check
 
-For EACH acceptance criterion (AC-N) in the spec:
+### 2.0: Determine Verification Mode
 
-1. **Identify the task(s)** that addressed this criterion
-2. **Read the changed files** and verify the criterion is actually satisfied
-3. **Mark status**: PASS / FAIL / PARTIAL
+Read `AC_VERIFICATION` from `.claude/project-config.json`.
 
-Generate a checklist:
+- If `"off"`, missing, or file doesn't exist → use **code-reading mode** (skip to 2.3-fallback below)
+- If `"auto"`, `"browser-only"`, or `"api-only"` → proceed to 2.1
+
+### 2.1: MCP Availability Check
+
+**Only for `auto` and `browser-only` modes:**
+
+Attempt to call `mcp__chrome-devtools__list_pages` as a lightweight probe.
+
+- **If succeeds** → `CHROME_MCP_AVAILABLE = true`
+- **If fails** (MCP server not running, connection refused, error):
+  - `CHROME_MCP_AVAILABLE = false`
+  - If mode is `"browser-only"`: warn — "Chrome DevTools MCP is not available. AC verification is set to browser-only but the debugger is not running. Falling back to code reading. Start the WebStorm JS debugger and re-run `/verify` for browser-based verification."
+  - If mode is `"auto"`: note — "Chrome MCP not available. Frontend AC items will be verified by code reading."
+
+### 2.2: Launch ac-verifier Agent
+
+Check if `.claude/agents/ac-verifier.md` exists. If not, fall back to code-reading mode (2.3-fallback).
+
+If it exists, launch the **ac-verifier** agent with:
+1. The full acceptance criteria section from the spec
+2. `CHROME_MCP_AVAILABLE` status (`true`/`false`)
+3. `AC_VERIFICATION_URL` from `.claude/project-config.json`
+4. `AC_VERIFICATION_API_BASE` from `.claude/project-config.json`
+5. `AC_VERIFICATION` mode (`auto`/`browser-only`/`api-only`)
+6. The list of changed files across all tasks (for code-reading fallback on items that cannot be browser/API verified)
+7. Instruction: "Verify each AC item. For items you cannot verify via browser/API, fall back to reading the changed files listed below."
+
+### 2.3: Merge Results
+
+Use the agent's structured report to populate the AC verification checklist:
 
 ```markdown
 ## Acceptance Criteria Verification
 
-| AC | Description | Task(s) | Status | Evidence |
-|----|-------------|---------|--------|----------|
-| AC-1 | [description] | Task [N] | PASS/FAIL | [file:line or explanation] |
-| AC-2 | [description] | Task [N] | PASS/FAIL | [file:line or explanation] |
+| AC | Description | Task(s) | Category | Status | Evidence |
+|----|-------------|---------|----------|--------|----------|
+| AC-1 | [description] | Task [N] | frontend | PASS | [snapshot/screenshot/explanation] |
+| AC-2 | [description] | Task [N] | backend | FAIL | [expected vs actual] |
+| AC-3 | [description] | Task [N] | manual | MANUAL | [reason cannot automate] |
 ...
 ```
+
+For MANUAL and SKIPPED items, append a note explaining why automated verification was not possible.
+
+### 2.3-fallback: Code-Reading Mode
+
+If AC verification is off, the agent doesn't exist, or MCP probe failed in browser-only mode — use the original code-reading approach:
+
+For EACH acceptance criterion (AC-N) in the spec:
+1. **Identify the task(s)** that addressed this criterion
+2. **Read the changed files** and verify the criterion is actually satisfied
+3. **Mark status**: PASS / FAIL / PARTIAL
+
+Generate the same checklist table (without the Category column).
+
+### 2.4: Handle Failures
 
 If ANY criterion is FAIL or PARTIAL:
 - Identify what's missing

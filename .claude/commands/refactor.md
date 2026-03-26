@@ -87,6 +87,17 @@ Wait for user to choose. Execute their choice using the same recovery logic as `
 3. Read `CLAUDE.md` — note the Source Root (if not `.`, this is a wrapper project)
    - **Source repo tracking** (wrapper mode only, `SOURCE_ROOT != "."`): Record the source repo's current HEAD as `$SOURCE_CHECKPOINT` (`git -C $SOURCE_ROOT rev-parse HEAD`) and the source branch name (`git -C $SOURCE_ROOT branch --show-current`).
 
+### 1.1.5: AC Verification Readiness Check
+
+Read `AC_VERIFICATION` from `.claude/project-config.json`. If the value is `"off"` or the key does not exist, skip this check entirely.
+
+If `AC_VERIFICATION` is `"auto"` or `"browser-only"`:
+1. Attempt to call `mcp__chrome-devtools__list_pages` as a lightweight probe.
+2. If it **fails** (MCP not available):
+   - Display: "Note: Chrome DevTools MCP is not running. When `/verify` runs after this refactor, frontend AC items will be verified by code reading instead of browser interaction. To enable browser-based AC verification, start the WebStorm JS debugger before running `/verify`."
+   - This is informational only — do NOT block execution.
+3. If it **succeeds**: no message needed.
+
 ### 1.2: Parse Arguments
 
 Parse `$ARGUMENTS` to extract:

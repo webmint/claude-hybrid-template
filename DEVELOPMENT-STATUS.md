@@ -24,12 +24,13 @@ A reusable spec-driven development template for Claude Code. Combines a structur
 - `refresh-docs.md` — Lightweight documentation refresh using git delta; invokes tech-writer in Refresh Mode on changed files only
 - `release.md` — Meta-command for the template repo itself: automates version bump, changelog, and documentation updates after making changes
 
-### Agent Templates (14 files in `.claude/templates/agents/`)
+### Agent Templates (15 files in `.claude/templates/agents/`)
 Always included: `code-reviewer`, `qa-engineer`, `runtime-debugger`, `tech-writer`
 By project type: `frontend-engineer`, `backend-engineer`, `architect`
 By detected stack: `db-engineer`, `devops-engineer`, `design-auditor`, `api-designer`, `performance-analyst`, `security-reviewer`, `migration-engineer`
+By config: `ac-verifier` (when `AC_VERIFICATION != "off"`)
 
-Setup wizard decides which agents to generate based on detected stack.
+Setup wizard decides which agents to generate based on detected stack and user preferences (including AC verification mode).
 
 ### Supporting Templates (in `.claude/templates/`)
 - `CLAUDE.template.md` — Main project config (including Type Check Command and Lint Command fields), workflow commands, key rules (Always/Never lists), commit convention (format + attribution)
@@ -80,6 +81,7 @@ Setup wizard decides which agents to generate based on detected stack.
 13. **Configurable AI attribution** — commits default to no Claude/AI mention; opt-in via setup wizard. Rule stored in CLAUDE.md and enforced by all commit-creating commands
 14. **Configurable agent model** — agents default to opus; configurable via setup wizard (`AGENT_MODEL` in project-config.json). Switch to sonnet when rate-limited
 15. **Three-way merge for updates** — `update.sh` uses `git merge-file` with baselines to apply only template diffs, preserving all project customizations (wizard-added items, custom sections, manual edits)
+16. **AC verification is opt-in and project-conditional** — setup wizard asks if AC should be verified via browser (Chrome MCP), API calls, or code reading. Work-initiating commands probe MCP availability at startup (non-blocking warning). `/verify` Phase 2 launches the ac-verifier agent when enabled, with graceful fallback to code reading
 
 ### Onboarding System (`/onboard`)
 - Runs after `/constitute` for existing projects — uses constitution + CLAUDE.md + memory as input

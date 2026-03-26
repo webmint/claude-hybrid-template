@@ -28,6 +28,7 @@ The wizard will:
    - Ask clarifying questions about your stack
    - Ask whether commits should include AI co-author attribution (default: no)
    - Ask which model agents should use (default: opus) — applies to 13 agents; tech-writer is always sonnet for speed
+   - Ask how acceptance criteria should be verified — Auto (browser + API with fallback), Browser only, API only, or Off. Auto-detects dev server URL
    - Generate `CLAUDE.md`, `constitution.md`, agents, hooks, and memory
    - Remove the templates directory when done
 
@@ -36,7 +37,7 @@ The wizard will:
 The template includes two pre-configured MCP servers in `.mcp.json`:
 
 - **Context7** — Fetches up-to-date documentation for libraries and frameworks directly into context. Powered by `@upstash/context7-mcp`. No setup required — runs via `npx`.
-- **Chrome DevTools** — Connects to WebStorm's Chrome debugger for taking screenshots and evaluating scripts in the browser. Requires WebStorm JS debugger to be running. The script at `scripts/chrome-devtools-mcp.sh` auto-detects the debugging port.
+- **Chrome DevTools** — Connects to WebStorm's Chrome debugger for screenshots, DOM interaction, and AC verification against the running app. Requires WebStorm JS debugger to be running. The script at `scripts/chrome-devtools-mcp.sh` auto-detects the debugging port. Used by the `runtime-debugger` and `ac-verifier` agents.
 
 Both servers are enabled by default in the settings template. Permissions for their tools (`take_screenshot`, `evaluate_script`, `resolve-library-id`, `get-library-docs`) are pre-allowed.
 
@@ -127,7 +128,7 @@ Supports multiple execution modes:
 - `/execute-task all` — all pending tasks in feature
 
 ### Phase 7: `/verify` (per feature)
-Code review against the spec's acceptance criteria, cross-referenced with constitution rules. Updates persistent memory with lessons learned. Phase 10 (Issue Triage) lets you decide per-issue: fix now (chains into `/fix`), report for later (creates a bug file in `bugs/`), or skip. Automatically triggers `/summarize` when verdict is APPROVED.
+Code review against the spec's acceptance criteria, cross-referenced with constitution rules. When AC verification is enabled, launches the `ac-verifier` agent to test criteria against the running app via Chrome MCP and/or API calls — falls back to code reading when MCP is unavailable. Updates persistent memory with lessons learned. Phase 10 (Issue Triage) lets you decide per-issue: fix now (chains into `/fix`), report for later (creates a bug file in `bugs/`), or skip. Automatically triggers `/summarize` when verdict is APPROVED.
 
 ### Phase 8: `/summarize` (per feature, auto)
 Generates a concise, PR-ready summary of the completed feature. Reads spec, plan, tasks, and git history to produce a structured overview of what was built, files changed, key decisions, and acceptance criteria. Saves to `specs/[feature]/summary.md`. Runs automatically after `/verify` approves — no manual invocation needed.
