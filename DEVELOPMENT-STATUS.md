@@ -50,7 +50,7 @@ Setup wizard decides which agents to generate based on detected stack and user p
 - `update.sh` — Manifest-driven update script with 4 strategies: overwrite (template-owned), three-way merge via `git merge-file` (agents + CLAUDE.md), smart merge (JSON/text), copy-if-missing
 - **Three-way merge**: stores baseline snapshots of substituted templates in `.claude/agents/.baseline/` and `.claude/.baseline/`. On update, computes diff (baseline → new template) and applies it to current file — preserves all project customizations while propagating template improvements
 - **Placeholder validation**: after substitution, checks for remaining `{{...}}` patterns; skips file if found (prevents destroying agents with broken config values)
-- `.claude/project-config.json` — Machine-readable config written by `/setup-wizard`, stores all template variable values (including `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `COMMIT_ATTRIBUTION`, `AGENT_MODEL`) for `update.sh` placeholder substitution
+- `.claude/project-config.json` — Machine-readable config written by `/setup-wizard`, stores all template variable values (including `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `COMMIT_ATTRIBUTION`, `MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY`) for `update.sh` placeholder substitution
 - `.claude/template-manifest.json` — Defines file ownership categories and update strategies; self-updates (template-owned)
 - One-time migration: extracts config from existing `CLAUDE.md` and agent files when `project-config.json` is missing
 
@@ -85,7 +85,7 @@ Setup wizard decides which agents to generate based on detected stack and user p
 11. **Wrapper mode for client-invisible AI** — template wraps around existing project folder; zero Claude traces in the client's repo
 12. **Cross-task contracts prevent silent drift** — each task declares Expects/Produces; preconditions catch upstream semantic errors before they compound, postconditions verify the task delivered what downstream tasks need
 13. **Configurable AI attribution** — commits default to no Claude/AI mention; opt-in via setup wizard. Rule stored in CLAUDE.md and enforced by all commit-creating commands
-14. **Configurable agent model** — agents default to opus; configurable via setup wizard (`AGENT_MODEL` in project-config.json). Switch to sonnet when rate-limited
+14. **Tiered agent models** — agents use 3 model tiers: Think (opus — architect, api-designer, security-reviewer), Do (sonnet — implementation agents), Verify (sonnet — review/test agents). Configurable via setup wizard (`MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY` in project-config.json)
 15. **Three-way merge for updates** — `update.sh` uses `git merge-file` with baselines to apply only template diffs, preserving all project customizations (wizard-added items, custom sections, manual edits)
 16. **AC verification is opt-in and project-conditional** — setup wizard asks if AC should be verified via browser (Chrome MCP), API calls, or code reading. Work-initiating commands probe MCP availability at startup (non-blocking warning). `/verify` Phase 2 launches the ac-verifier agent when enabled, with graceful fallback to code reading
 
