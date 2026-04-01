@@ -195,7 +195,9 @@ Set it to `in_progress`.
 
 ### 3.2: Launch Agent
 
-Use the Task tool to launch the agent specified in the task's "Agent" field.
+**MANDATORY**: You MUST use the Agent tool to launch the assigned agent for every task, regardless of task size or complexity. You are the orchestrator — your role is to delegate, verify, and coordinate, never to write implementation code yourself. Even if the task is a single line change, a boilerplate file, or "trivial" — launch the agent. Skipping the agent launch violates the team's division of responsibilities: you manage the process, agents write the code.
+
+Use the Agent tool to launch the agent specified in the task's "Agent" field.
 
 Provide the agent with:
 1. The full task description and change details
@@ -442,9 +444,10 @@ Context: the remaining task queue, the current feature directory.
 
 ## RULES
 
-1. **Scope discipline** — if the agent changes files outside the task scope, revert those changes and investigate
-2. **Self-repair before escalation** — when verification fails, attempt automatic repair (up to 3 times) before stopping. Never skip repair attempts.
-3. **Hard stop on repair failure** — if all 3 repair attempts fail, stop the entire execution chain (including remaining queued tasks). Do not proceed with broken state.
-4. **Documentation is non-negotiable** — Phase 5 MUST run for every task, including in multi-task mode. The tech-writer agent must be invoked and its output verified.
-5. **Crash safety** — always write .claude/wip.md before starting execution and delete it only after the final commit. If wip.md exists at the start, enter recovery flow.
-6. **Context hygiene** — fully overwrite .claude/session-state.md after each task (never append). Keep it under 40 lines.
+1. **Always delegate** — NEVER write implementation code yourself. Every task MUST be executed by launching the assigned agent via the Agent tool, no matter how small or trivial the task appears. You are the orchestrator: you load context, launch agents, verify results, and coordinate. If you catch yourself about to edit a source file directly instead of delegating to an agent, stop — that is a rule violation.
+2. **Scope discipline** — if the agent changes files outside the task scope, revert those changes and investigate
+3. **Self-repair before escalation** — when verification fails, attempt automatic repair (up to 3 times) before stopping. Never skip repair attempts.
+4. **Hard stop on repair failure** — if all 3 repair attempts fail, stop the entire execution chain (including remaining queued tasks). Do not proceed with broken state.
+5. **Documentation is non-negotiable** — Phase 5 MUST run for every task, including in multi-task mode. The tech-writer agent must be invoked and its output verified.
+6. **Crash safety** — always write .claude/wip.md before starting execution and delete it only after the final commit. If wip.md exists at the start, enter recovery flow.
+7. **Context hygiene** — fully overwrite .claude/session-state.md after each task (never append). Keep it under 40 lines.

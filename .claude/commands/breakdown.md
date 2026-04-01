@@ -80,11 +80,31 @@ Create atomic tasks following these rules:
 - **Riskiest changes first** — catch problems early
 
 ### Agent Assignment Rules
-Assign each task to the most appropriate agent based on the files it touches:
+
+Agent assignment is a two-step decision: first determine the task's **nature** (does it involve design decisions, or is it mechanical pattern-following?), then assign based on both nature and file layer.
+
+#### Step 1: Classify Task Nature
+
+For each task, determine whether it is **design-decision** or **mechanical**:
+
+- **Design-decision**: The task requires choosing interfaces, data shapes, algorithms, orchestration logic, or contracts that downstream tasks depend on. There is no existing pattern in the codebase to copy — the implementer must make judgment calls.
+- **Mechanical**: The task follows an established pattern already present in the codebase (e.g., wrapping a data source with try/catch error mapping, registering dependencies in a DI container, adding a route entry). The implementer copies an existing example and substitutes names — zero design decisions.
+
+**Signals a task is mechanical**:
+- The codebase already has 1+ examples of the exact same pattern for other features
+- The task's output is fully determined by its inputs (e.g., repo impl is determined by the repo interface + data source interface)
+- The task file would be <30 lines of boilerplate with no conditional logic
+- The task description could be reduced to "do what feature X did, but for feature Y"
+
+#### Step 2: Assign Agent
+
+For **design-decision** tasks, assign by file layer:
 
 | Files in... | Agent |
 |-------------|-------|
-| Core/domain/data layers, business logic, API, types | architect |
+| Domain models, interfaces, contracts, type definitions, architectural decisions | architect |
+| State management with orchestration logic (BLoC, Redux reducers with business rules, Pinia stores with computed logic) | architect |
+| API endpoints, controllers, middleware, services, server-side logic | backend-engineer |
 | UI components, styles, routes, composables, stores | frontend-engineer |
 | Mobile screens, navigation, native modules, platform-specific code, app lifecycle | mobile-engineer |
 | Both core + UI (tightly coupled change) | architect first, then frontend-engineer |
@@ -96,6 +116,25 @@ Assign each task to the most appropriate agent based on the files it touches:
 | CI/CD, Docker, deployment config, infrastructure | devops-engineer |
 | Data migration scripts, backward compatibility layers | migration-engineer |
 | Accessibility, design system compliance, UI audit | design-auditor |
+
+For **mechanical** tasks, assign to the agent who owns the **nearest dependency** — the upstream producer or the downstream consumer — whichever makes the task a natural extension of work that agent is already doing:
+
+| Mechanical task type | Assign to | Rationale |
+|----------------------|-----------|-----------|
+| Glue layer between data source and domain (e.g., repository impl that wraps a data source with error mapping) | Same agent as the data source task (typically db-engineer) | The repo impl is tightly coupled to the data source interface; the same agent can produce both |
+| DI/service registration following an existing pattern | Same agent as the primary consumer (typically frontend-engineer if wiring UI, architect if wiring domain services) | Registration is a mechanical step in connecting the consumer to its dependencies |
+| Route/navigation entry for a new page | frontend-engineer (or mobile-engineer for mobile routes) | Route registration is UI wiring, not architectural design |
+| Config/environment additions following existing pattern | devops-engineer | Infrastructure concern regardless of what the config enables |
+| State management boilerplate with no business logic (e.g., simple CRUD store, pass-through BLoC) | frontend-engineer | When the state layer has no orchestration logic, it's UI plumbing |
+
+#### Step 3: Consider Bundling Mechanical Tasks
+
+After assignment, check whether any mechanical task should be **bundled into its dependency** rather than standing alone:
+
+- **Bundle when**: The mechanical task is <30 lines, has exactly one dependency, and is assigned to the same agent as that dependency. Keeping it separate adds an execution wave and agent launch for trivial work.
+- **Keep separate when**: The mechanical task touches files in a different layer than its dependency, has multiple dependents that need its output as a checkpoint, or the combined task would exceed the 1-3 file limit.
+
+When bundling, merge the mechanical task's files, contracts, and done-when conditions into the parent task. Update the dependency graph accordingly.
 
 **Note**: `performance-analyst` and `security-reviewer` also run automatically during `/verify` on all changed files. Assign them to individual tasks only when the task itself is primarily about performance or security work.
 

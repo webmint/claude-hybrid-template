@@ -230,12 +230,35 @@ migrate_project_config() {
     testing="$(grep '^\*\*Testing\*\*:' "$TARGET_DIR/.claude/agents/qa-engineer.md" | sed 's/\*\*Testing\*\*: *//' | head -1)"
   fi
 
-  # Extract agent model from existing agent frontmatter
-  local agent_model=""
-  if [ -n "$sample_agent" ]; then
-    agent_model="$(grep '^model:' "$sample_agent" | sed 's/model: *//' | head -1)"
-  fi
-  : "${agent_model:=opus}"
+  # Extract agent model tiers from existing agent frontmatter
+  # Think tier: architect, api-designer, security-reviewer
+  # Do tier: backend-engineer, frontend-engineer, mobile-engineer, db-engineer, devops-engineer, migration-engineer, runtime-debugger, performance-analyst, design-auditor
+  # Verify tier: code-reviewer, ac-verifier, qa-engineer
+  local model_think="" model_do="" model_verify=""
+  for agent_name in architect api-designer security-reviewer; do
+    local agent_file="$TARGET_DIR/.claude/agents/${agent_name}.md"
+    if [ -f "$agent_file" ]; then
+      model_think="$(grep '^model:' "$agent_file" | sed 's/model: *//' | head -1)"
+      break
+    fi
+  done
+  for agent_name in frontend-engineer backend-engineer db-engineer; do
+    local agent_file="$TARGET_DIR/.claude/agents/${agent_name}.md"
+    if [ -f "$agent_file" ]; then
+      model_do="$(grep '^model:' "$agent_file" | sed 's/model: *//' | head -1)"
+      break
+    fi
+  done
+  for agent_name in code-reviewer ac-verifier qa-engineer; do
+    local agent_file="$TARGET_DIR/.claude/agents/${agent_name}.md"
+    if [ -f "$agent_file" ]; then
+      model_verify="$(grep '^model:' "$agent_file" | sed 's/model: *//' | head -1)"
+      break
+    fi
+  done
+  : "${model_think:=opus}"
+  : "${model_do:=sonnet}"
+  : "${model_verify:=sonnet}"
 
   # Extract commit attribution rule from Commit Convention section
   local commit_attribution=""
@@ -274,7 +297,9 @@ migrate_project_config() {
     --arg AGENT_LIST "${agent_list:-N/A}" \
     --arg WRAPPER_MODE_SECTION "" \
     --arg COMMIT_ATTRIBUTION "$commit_attribution" \
-    --arg AGENT_MODEL "$agent_model" \
+    --arg MODEL_THINK "$model_think" \
+    --arg MODEL_DO "$model_do" \
+    --arg MODEL_VERIFY "$model_verify" \
     '{
       PROJECT_NAME: $PROJECT_NAME,
       PROJECT_TYPE: $PROJECT_TYPE,
@@ -299,7 +324,9 @@ migrate_project_config() {
       AGENT_LIST: $AGENT_LIST,
       WRAPPER_MODE_SECTION: $WRAPPER_MODE_SECTION,
       COMMIT_ATTRIBUTION: $COMMIT_ATTRIBUTION,
-      AGENT_MODEL: $AGENT_MODEL
+      MODEL_THINK: $MODEL_THINK,
+      MODEL_DO: $MODEL_DO,
+      MODEL_VERIFY: $MODEL_VERIFY
     }' > "$config_out"
 
   info "Wrote .claude/project-config.json — please review extracted values."
@@ -316,6 +343,19 @@ else
   else
     warn "Skipping placeholder substitution for agents and CLAUDE.md."
     warn "Re-run /setup-wizard to generate .claude/project-config.json"
+  fi
+fi
+
+# Migrate old AGENT_MODEL → MODEL_THINK/MODEL_DO/MODEL_VERIFY
+if [ "$HAS_CONFIG" = true ]; then
+  old_model="$(jq -r '.AGENT_MODEL // empty' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  has_new_keys="$(jq -r '.MODEL_THINK // empty' "$PROJECT_CONFIG" 2>/dev/null || true)"
+  if [ -n "$old_model" ] && [ -z "$has_new_keys" ]; then
+    info "Migrating AGENT_MODEL → MODEL_THINK/MODEL_DO/MODEL_VERIFY (Think=$old_model, Do=sonnet, Verify=sonnet)"
+    jq --arg model "$old_model" '
+      . + {MODEL_THINK: $model, MODEL_DO: "sonnet", MODEL_VERIFY: "sonnet"}
+      | del(.AGENT_MODEL)
+    ' "$PROJECT_CONFIG" > "${PROJECT_CONFIG}.tmp" && mv "${PROJECT_CONFIG}.tmp" "$PROJECT_CONFIG"
   fi
 fi
 

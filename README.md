@@ -27,7 +27,7 @@ The wizard will:
    - Detect your project structure (or interview you for greenfield projects)
    - Ask clarifying questions about your stack
    - Ask whether commits should include AI co-author attribution (default: no)
-   - Ask which model agents should use (default: opus) — applies to 13 agents; tech-writer is always sonnet for speed
+   - Ask which model each agent tier should use — Think tier (opus), Do tier (sonnet), Verify tier (sonnet); tech-writer is always sonnet
    - Ask how acceptance criteria should be verified — Auto (browser + API with fallback), Browser only, API only, or Off. Auto-detects dev server URL
    - Generate `CLAUDE.md`, `constitution.md`, agents, hooks, and memory
    - Remove the templates directory when done
@@ -68,7 +68,7 @@ When the template is improved, you can push updates to projects that already use
 
 ### Project config
 
-`/setup-wizard` writes `.claude/project-config.json` with all template variable values (framework, language, architecture, agent model, etc.). `update.sh` reads this file to apply placeholder substitution when updating agents and CLAUDE.md. For projects that predate this feature, the update script auto-extracts values from the existing `CLAUDE.md` and agent files as a one-time migration.
+`/setup-wizard` writes `.claude/project-config.json` with all template variable values (framework, language, architecture, model tiers, etc.). `update.sh` reads this file to apply placeholder substitution when updating agents and CLAUDE.md. For projects that predate this feature, the update script auto-extracts values from the existing `CLAUDE.md` and agent files as a one-time migration.
 
 ### Three-way merge
 
