@@ -357,14 +357,14 @@ Wait for user response:
      ```
 3. Update the task index (`specs/NNN-feature/tasks/README.md`) — mark this task's status as Complete
 
-After marking the task complete in task files, commit:
+Commit all changes (source files, task files, any review fixes) in a single `[WIP]` commit:
 ```
-git add specs/ .claude/wip.md && git commit -m "[WIP] Task [N]: [title] — marked complete"
+git add [changed source files] specs/ && git commit -m "[WIP] Task [N]: [title] — complete"
 ```
 
 Update `.claude/wip.md` — change Phase to `5 (Report)`.
 
-## PHASE 5: Report & Commit
+## PHASE 5: Report & Cleanup
 
 Provide a concise summary to the user:
 
@@ -387,13 +387,6 @@ Provide a concise summary to the user:
 **Spec criteria addressed**: AC-[numbers]
 
 **Next task**: [NNN]-[title] (ready / blocked by [NNN])
-```
-
-### Commit and WIP Cleanup
-
-Commit all remaining changes (task files, any review fixes) with a `[WIP]` prefix:
-```
-git add [changed files] specs/ && git commit -m "[WIP] Task [N]: [title] — complete"
 ```
 
 Delete `.claude/wip.md`.

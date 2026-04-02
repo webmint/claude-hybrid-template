@@ -200,7 +200,7 @@ If the agent doesn't exist, skip this phase silently.
 - Type checker: PASS/FAIL
 - Linter: PASS/FAIL
 - Build: PASS/FAIL/SKIP
-- Constitution compliance: PASS/FAIL [details if fail]
+- Cross-task consistency: PASS/FAIL [details if fail]
 - No scope creep: PASS/FAIL [details if fail]
 - No leftover artifacts: PASS/FAIL [details if fail]
 
@@ -386,6 +386,6 @@ After fixes, run `/verify` to confirm.
 
 1. **Verify against spec, not assumptions** — the spec is the contract. If the code does something useful but the spec didn't ask for it, that's scope creep
 2. **Be specific about failures** — "AC-2 fails because `orderState.soldToParty` is null when ShippingTypeEnum is SoldTo, but it should return the party data" not "AC-2 fails"
-3. **Verification is read-only** — /verify does not fix code, invoke /fix, or launch the tech-writer. It reports findings and lets the user decide next steps
+3. **Verification does not fix code** — /verify does not modify source code or invoke /fix. It verifies, documents (feature-level docs via tech-writer in Phase 3.3), and reports findings. The user decides next steps
 4. **Memory updates are mandatory** — even if everything passed, record what you learned
 5. **Constitution violations are always critical** — never downgrade a constitution violation to "warning"

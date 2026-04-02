@@ -65,19 +65,10 @@ Wait for user to choose.
 
 First, check the Phase field in wip.md to determine where execution was interrupted:
 
-- **Phase 6.5 (Squash Applied, Commit Pending)** — `execute-task` only. The `git reset --soft` already happened but the final commit failed. Changes are staged. Do NOT re-run the reset. Retry the commit only:
-  ```
-  git commit -m "feat([feature-name]): Task [N] — [title]"
-  ```
-  If the commit succeeds, proceed to delete wip.md and continue to Phase 7. If it fails again, inform the user: "Squash commit still failing. Your changes are staged. Run `git commit` manually."
+- **Phase 5 (Report)** — for `execute-task`: the task was verified and marked complete. Code is committed. Delete wip.md and continue to Phase 6 (memory update).
+- **Phase 8 (squash-related)** — for `fix` and `refactor`: check whether the squash already happened. If wip.md says "Squash Applied", retry the commit only. If squash hasn't happened, run the squash from the start.
 
-- **Phase 6 (Report)** — `execute-task` only. The squash has NOT been applied yet. Run Phase 6 from the start (squash + commit + wip cleanup).
-
-- **Phase 7 (Memory Update)** — Squash and commit succeeded. Skip to Phase 7 (memory update) and continue from there.
-
-- **Phase 7.5 (Context Maintenance)** — Skip to Phase 7.5 and continue from there.
-
-- **All other phases (3, 4, 5, etc.):**
+- **All other phases (3, 4, etc.):**
   - Run the Type Check Command from CLAUDE.md, the Lint Command, and the build command (if specified) on all files listed in the WIP marker
   - If they pass, jump to the phase AFTER the interrupted phase
   - If they fail, inform the user — the code is in a broken state. Recommend option 2 (rollback and retry).
