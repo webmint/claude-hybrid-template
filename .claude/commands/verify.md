@@ -124,7 +124,7 @@ The agent will check: constitution compliance, architecture & patterns, type saf
 - **Linter**: Run the Lint Command from CLAUDE.md on all changed files and report result
 - **Build** (if Build Command is specified in CLAUDE.md): Run the build command and report result. For wrapper mode projects, run inside the Source Root directory. Skip if no Build Command is configured
 - **Scope creep**: Compare changed files against the spec's scope boundaries — flag files outside scope
-- **Documentation**: Check if any task introduced new public APIs or behavior changes that lack docs in `docs/` or inline JSDoc. Flag as Warning. For each documentation gap found, record the specific file path and public API name — this is needed for direct remediation in Phase 10
+- **Documentation**: Check if any task introduced new public APIs or behavior changes that lack docs in `docs/` or inline JSDoc. Flag as Warning. For each documentation gap found, record the specific file path and public API name — this is included in the Phase 10 issue report
 
 The code-reviewer's verdict (APPROVE / REQUEST CHANGES / BLOCK) feeds into the final verification report.
 
@@ -254,98 +254,100 @@ Then invoke `/summarize`:
 ✅ Verification passed — automatically running /summarize
 ```
 
-## PHASE 10: Issue Triage (if NEEDS WORK)
+## PHASE 10: Issue Report (if NEEDS WORK)
 
-If the verdict is NEEDS WORK and the report contains Critical or Warning issues, offer the user a triage for each issue. If the verdict is APPROVED or REJECTED, skip this phase entirely.
+If the verdict is NEEDS WORK and the report contains Critical or Warning issues, present them to the user with actionable guidance. If the verdict is APPROVED or REJECTED, skip this phase entirely.
 
-### 10.1: Number and Present Issues
+### 10.1: Present Issues
 
-List each Critical and Warning issue from the verification report with a sequential number:
+List each Critical and Warning issue from the verification report with a sequential number. For each issue, indicate the type and suggested action:
 
 ```
-Issues to triage:
+## Issues Found
 
+### Code Issues
 1. [Critical] [file path] — [issue description]
+   → Run `/fix "[description]"` to address
 2. [Warning] [file path] — [issue description]
-3. [Warning] [file path] — [issue description]
-...
+   → Run `/fix "[description]"` to address
+
+### Documentation Gaps
+3. [Warning] [file path] — [public API lacking docs]
+   → Run `/refresh-docs` to address documentation gaps
+
+### Info (no action needed)
+- [observation]
 ```
 
-Info-level issues are shown for awareness but not included in triage (they are observations, not actionable bugs).
+### 10.2: Failure-Count Guidance
 
-### 10.2: Per-Issue Triage
+Based on the number of Critical + Warning issues, add context-aware guidance:
 
-If there are **5 or fewer** issues, ask the user for each one individually:
-
+**1-3 issues:**
 ```
-Issue #N: [severity] [short description]
-  1. Fix now — invoke /fix with this issue
-  2. Fix docs now — invoke tech-writer agent directly (for documentation-only issues)
-  3. Report for later — save to bugs/ for future fixing
-  4. Skip — ignore this issue
+[N] issues found. You can run `/fix` for each in the current session.
 ```
 
-If there are **more than 5** issues, first offer a batch option:
-
+**4-6 issues:**
 ```
-[N] issues found. How would you like to triage?
-  1. Triage individually — decide per-issue
-  2. Report all for later — save all to bugs/
-  3. Pick specific issues to fix now — provide issue numbers, report the rest
+[N] issues found. Run `/fix` for each, but consider `/compact` after every 2-3 fixes to manage context.
 ```
 
-Wait for user response before proceeding.
-
-### 10.3: Execute Triage Decisions
-
-**Determine next bug number**: Scan `bugs/` for existing `.md` files, find the highest NNN prefix, and assign numbers sequentially from there. Do this ONCE before creating any files (do not re-scan between each file creation).
-
-**"Report for later" items**: For each, create a bug file in `bugs/`:
-1. Write `bugs/NNN-short-description.md` using the standard bug file format
-2. Set **Status** to "Open", **Source** to "verify", **Severity** from the verification report
-3. Copy the relevant evidence from the verification report into the **Evidence** section
-4. Populate **File(s)** from the issue's file path
-
-**"Fix now" items**: For each, also create a bug file first (so there's a tracking record):
-1. Write the bug file with **Status** set to "In Progress"
-2. Invoke `/fix bugs/NNN-short-description.md` for the **first** "fix now" item only
-3. If there are additional "fix now" items beyond the first, inform the user:
-   "Starting with issue #N. After this fix completes, address remaining issues by running `/fix bugs/NNN-xxx.md` for each, or re-run `/verify` to re-assess."
-
-**"Fix docs now" items** (documentation gaps only): For each, invoke the tech-writer agent directly — do NOT route through `/fix`:
-1. Read `.claude/agents/tech-writer.md` and include its **full content** as the opening section of the agent prompt. If the file does not exist, proceed with the inline prompt alone.
-2. Launch the **tech-writer** agent with:
-   - Part 1 (if agent file exists): The full content of `.claude/agents/tech-writer.md`
-   - Part 2: The list of files and public APIs flagged as lacking documentation, the feature spec for context, and instruction: "These public APIs were flagged during verification as lacking documentation. Add inline docs (JSDoc/docstrings) to each, and create or update the relevant `docs/` file."
-3. After the tech-writer completes, verify the flagged APIs now have inline docs
-4. Commit the doc changes (follow the **Commit Convention** section in CLAUDE.md for attribution rules):
-   ```
-   git add docs/ [source files with doc changes] && git commit -m "docs: add missing documentation flagged by /verify"
-   ```
-5. Process the next "Fix docs now" item (unlike "Fix now", multiple doc fixes can run sequentially since they are lightweight)
-
-**"Skip" items**: No action taken.
-
-### 10.4: Summary
-
-Present a summary of triage decisions:
-
+**7+ issues:**
 ```
-Triage complete:
-- Fix now: [count] (starting with: bugs/NNN-xxx.md)
-- Fix docs now: [count] (completed)
-- Reported for later: [count]
-  - bugs/NNN-xxx.md
-  - bugs/NNN-xxx.md
-- Skipped: [count]
+[N] issues found. This many failures may indicate deeper issues with the implementation.
+Consider re-running `/execute-task` for the affected tasks rather than fixing individually.
 ```
 
-If "fix now" items exist, proceed to invoke `/fix` for the first one. If only "fix docs now" items exist (no "fix now"), report documentation fixes complete.
+### 10.3: Offer Batch Bug Filing
+
+After presenting issues and guidance, offer to create bug files:
+
+```
+Create bug files for all [N] issues? Each file will contain the AC reference,
+expected/actual behavior, and affected files — enough context for a fresh
+`/fix` session.
+  1. Yes — create bug files for all issues
+  2. Select — create bug files for specific issues (provide numbers)
+  3. No — I'll handle these manually
+```
+
+Wait for user response.
+
+### 10.4: Create Bug Files (if requested)
+
+**Determine next bug number**: Scan `bugs/` for existing `.md` files, find the highest NNN prefix, and assign numbers sequentially from there. Do this ONCE before creating any files.
+
+For each issue being filed, create a bug file in `bugs/` following the format in `.claude/templates/storage-rules.md`:
+1. Write `bugs/NNN-short-description.md`
+2. Populate all fields:
+   - **Status**: Open
+   - **Source**: verify
+   - **Severity**: from the verification report
+   - **Feature**: path to the feature's spec.md
+   - **AC**: the acceptance criterion that failed (e.g., AC-2), or N/A
+   - **Expected Behavior**: what the AC says should happen (from the spec)
+   - **Actual Behavior**: what verification observed (from the report evidence)
+   - **File(s)**: affected files with area/function references (not line numbers)
+   - **Evidence**: verification method and specific output
+   - **Related Issues**: list of other bug files created in this batch
+
+Present the created files:
+
+```
+Bug files created:
+- bugs/NNN-xxx.md — [short title]
+- bugs/NNN-yyy.md — [short title]
+- bugs/NNN-zzz.md — [short title]
+
+To fix: run `/fix bugs/NNN-xxx.md` for each issue.
+After fixes, run `/verify` to confirm.
+```
 
 ## IMPORTANT RULES
 
 1. **Verify against spec, not assumptions** — the spec is the contract. If the code does something useful but the spec didn't ask for it, that's scope creep
 2. **Be specific about failures** — "AC-2 fails because `orderState.soldToParty` is null when ShippingTypeEnum is SoldTo, but it should return the party data" not "AC-2 fails"
-3. **Don't fix during verification** — Phases 1-9 are read-only. Phase 10 may invoke `/fix` based on user triage decisions, but verification itself does not apply fixes
+3. **Verification is read-only** — /verify does not fix code, invoke /fix, or launch the tech-writer. It reports findings and lets the user decide next steps
 4. **Memory updates are mandatory** — even if everything passed, record what you learned
 5. **Constitution violations are always critical** — never downgrade a constitution violation to "warning"
