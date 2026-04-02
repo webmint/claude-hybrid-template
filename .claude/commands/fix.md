@@ -105,6 +105,7 @@ Based on the bug description (and `--file` flag if provided):
 3. Read all files that appear related (up to 10 files for initial scan)
 4. Check `.claude/memory/MEMORY.md` for known pitfalls in this area
 5. **Task overlap check**: Scan `specs/*/tasks/*.md` for any Pending or In Progress tasks that list the same files in their Files section. If found, warn the user: "Note: Task [N] in feature [X] also targets [file]. Your fix may cause merge conflicts during future task execution." This is a warning only — do not block the fix.
+6. **Read related documentation**: Search `docs/` for files that reference the affected source files or their parent module (use Grep on `docs/` for the file names or directory names). Read up to 2 matching doc files — these describe the intended behavior for the affected area and help the fix agent understand what "correct" looks like. If no matches or `docs/` doesn't exist, skip.
 
 ### 1.3: Scope Check
 
@@ -151,6 +152,12 @@ Identify the root cause BEFORE writing any code.
 
 Before proceeding, clearly state:
 
+### 2.3: Select Fix Agent
+
+Read `.claude/commands/_agent-assignment.md` and select the agent based on the affected file's layer. If the selected agent doesn't exist in `.claude/agents/`, fall back to `architect`.
+
+### 2.4: Present Diagnosis
+
 ```
 ## Diagnosis
 
@@ -158,6 +165,7 @@ Before proceeding, clearly state:
 **Root cause**: [what's actually wrong and why]
 **File(s)**: [affected file paths with line numbers]
 **Fix approach**: [what needs to change — 1-3 sentences]
+**Fix agent**: [selected agent name]
 **Risk**: [what could go wrong with this fix]
 ```
 
@@ -217,22 +225,52 @@ If ANY pre-flight check fails, stop and inform the user with specifics.
 
 ## PHASE 4: Apply Fix
 
-### 4.1: Execute the Fix
+### 4.1: Launch Fix Agent
 
-Apply the minimal change that fixes the root cause.
+Use the Agent tool to launch the agent selected in Phase 2.3. You are the orchestrator — delegate the fix, do not write implementation code yourself.
 
-**Rules**:
+Provide the agent with all context (the agent reads nothing itself — everything comes from this prompt):
+
+```
+You are fixing a diagnosed bug.
+
+## Diagnosis
+[Full diagnosis from Phase 2.4 — bug description, root cause, affected files, line numbers, why it happens]
+
+## Approved Fix Approach
+[The fix approach the user approved]
+
+## Files to Change
+[List of affected files from diagnosis]
+
+## File Contents
+[Content of the affected source files — already read in Phase 1.2]
+
+## Documentation Context
+[Content from related docs/ files found in Phase 1.2 step 6, if any. Describes intended behavior for this area. Omit if no docs were found.]
+
+## Rules
 1. Make the smallest possible change that fixes the bug — nothing more
-2. Follow the project's constitution (code quality, patterns, naming)
-3. No refactoring of surrounding code
-4. No feature additions
-5. No "while I'm here" improvements
-6. Early returns over deep nesting
-7. No magic values — use named constants
-8. No debug artifacts (console.log, debugger, etc.)
-9. Handle both success and error paths
+2. Follow the project's constitution (key rules: [relevant rules from constitution.md])
+3. Known pitfalls for this area: [from MEMORY.md]
+4. No refactoring of surrounding code
+5. No feature additions
+6. No "while I'm here" improvements
+7. Early returns over deep nesting
+8. No magic values — use named constants
+9. No debug artifacts (console.log, debugger, etc.)
+10. Handle both success and error paths
+11. Every file you change must pass the project's type checker (see Type Check Command in CLAUDE.md)
+12. Every file you change must pass the project's linter (see Lint Command in CLAUDE.md)
 
-After applying the fix, commit:
+## Do NOT
+- Refactor surrounding code
+- Add features not related to the bug
+- Change files not listed above (unless absolutely necessary for compilation)
+- Skip the project's type checker or linter
+```
+
+After the agent completes, commit:
 ```
 git add [files you modified] .claude/wip.md && git commit -m "[WIP] Fix: [short description] — fix applied"
 ```

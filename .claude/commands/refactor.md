@@ -148,15 +148,7 @@ For each opportunity found, note: the category, affected lines, what's wrong, wh
 
 ### 2.3: Select Agent
 
-Based on the file location and code characteristics from 2.1, select the execution agent:
-
-- If the file is a **UI component, view, or deals with styling/state management/routing** → **frontend-engineer**
-- If the file is in the **core/domain/backend layer** (service, repository, use case, controller, middleware) → **architect**
-- If the file is a **backend endpoint or route handler** → **backend-engineer**
-- If the file is a **shared utility or type definition** → **architect**
-- If unclear → **architect** (safest default for structural changes)
-
-Cross-reference with `CLAUDE.md` project structure and `{{PROJECT_PATHS}}` in agent templates to confirm the selection.
+Read `.claude/commands/_agent-assignment.md` and select the agent based on the target file's layer and the code characteristics from 2.1. Cross-reference with `CLAUDE.md` project structure to confirm the selection. If the selected agent doesn't exist in `.claude/agents/`, fall back to `architect`.
 
 ### 2.4: Present Refactoring Proposal
 
