@@ -109,7 +109,7 @@ If ANY criterion is FAIL or PARTIAL:
 
 ## PHASE 3: Integration Check
 
-Individual code quality was reviewed per-task during `/execute-task` Phase 3.4. This phase checks what only the epic-level view can see: cross-task integration and overall consistency.
+Individual code quality was reviewed per-task during `/execute-task` Phase 3.3. This phase checks what only the epic-level view can see: cross-task integration and overall consistency.
 
 ### 3.1: Cross-Task Consistency
 

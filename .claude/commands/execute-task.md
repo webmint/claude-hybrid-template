@@ -94,7 +94,7 @@ After building the task queue, validate every task number in it before proceedin
 2. If any task number has no matching file, STOP with: "Task [N] does not exist in `specs/[feature]/tasks/`. Available tasks: [list available task numbers and titles]."
 3. If the task queue is empty after filtering (e.g., all tasks in a range are already Complete), inform the user: "No pending tasks match the requested range/selection."
 
-For multi-task queues: the current task is always the first item. After it completes (Phase 7.5), the remaining queue is processed via the Multi-Task Continuation phase (Phase 8).
+For multi-task queues: the current task is always the first item. After it completes (Phase 4), the remaining queue is processed via Phase 5.3 (Multi-Task Continuation).
 
 ### 1.2: Load Context
 
