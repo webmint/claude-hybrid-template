@@ -481,11 +481,19 @@ The keys must be the exact placeholder names (without `{{ }}`). Example:
   "MODEL_VERIFY": "sonnet",
   "AC_VERIFICATION": "auto",
   "AC_VERIFICATION_URL": "http://localhost:5173",
-  "AC_VERIFICATION_API_BASE": ""
+  "AC_VERIFICATION_API_BASE": "",
+  "DEFAULT_BRANCH": "main"
 }
 ```
 
-**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY`, `AC_VERIFICATION`, `AC_VERIFICATION_URL`, `AC_VERIFICATION_API_BASE`.
+**Detecting DEFAULT_BRANCH**: Use this cascade during Step 1:
+1. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null` → parse branch name
+2. Check if `main` exists: `git show-ref --verify --quiet refs/heads/main`
+3. Check if `master` exists: `git show-ref --verify --quiet refs/heads/master`
+4. Check if `develop` exists: `git show-ref --verify --quiet refs/heads/develop`
+5. If none found, default to `main`
+
+**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY`, `AC_VERIFICATION`, `AC_VERIFICATION_URL`, `AC_VERIFICATION_API_BASE`, `DEFAULT_BRANCH`.
 
 Use the exact same values you substituted into the templates. For multi-line values, use `\n` for newlines in the JSON string. For values that don't apply, use `"N/A"` (not empty string).
 

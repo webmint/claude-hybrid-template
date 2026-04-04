@@ -22,10 +22,15 @@ Generates a concise, PR-ready summary of a completed feature. Reads spec, plan, 
 
 ## PHASE 2: Gather Change Data
 
-1. Identify the feature branch: read the current branch name or detect the `spec/NNN-*` branch associated with this feature
-2. Run `git diff --stat main...HEAD` (or appropriate base branch) to get file change statistics
-3. Run `git log --oneline main...HEAD` to get commit history for this feature
-4. Collect all files changed across all tasks from task completion notes and deduplicate
+1. Read `.claude/project-config.json` for `DEFAULT_BRANCH` and `SOURCE_ROOT`. If `DEFAULT_BRANCH` is missing, fall back to `main` silently.
+2. Identify the feature branch: read the current branch name or detect the `spec/NNN-*` branch associated with this feature
+3. Run `git diff --stat [DEFAULT_BRANCH]...HEAD` to get file change statistics
+4. Run `git log --oneline [DEFAULT_BRANCH]...HEAD` to get commit history for this feature
+5. **Wrapper mode** (if `SOURCE_ROOT` is not `.`): Also gather source repo changes:
+   - `git -C $SOURCE_ROOT diff --stat` to get source code change statistics
+   - `git -C $SOURCE_ROOT log --oneline -20` to get recent source commits
+   - Include both wrapper (specs, docs) and source (code) changes in the summary
+6. Collect all files changed across all tasks from task completion notes and deduplicate
 
 ## PHASE 3: Generate Summary
 
