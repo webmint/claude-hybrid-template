@@ -6,7 +6,6 @@
     "description": "Files 100% owned by the template — safe to overwrite on update",
     "patterns": [
       ".claude/commands/breakdown.md",
-      ".claude/commands/clarify.md",
       ".claude/commands/constitute.md",
       ".claude/commands/execute-task.md",
       ".claude/commands/plan.md",

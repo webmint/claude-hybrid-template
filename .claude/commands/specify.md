@@ -84,21 +84,22 @@ Before doing ANY analysis, read these files for context:
 
 ## PHASE 2: Clarify Requirements
 
-Based on the description, identify ambiguities and ask clarifying questions. Use AskUserQuestion to ask 2-4 focused questions.
+Based on the description, identify ambiguities and ask clarifying questions. Ask as many questions as needed — no artificial limit. Use your judgment.
 
-**Common clarification areas:**
+**Clarification areas (prioritized):**
 
 1. **Scope boundaries**: "Should this also affect [related area], or just [specific area]?"
-2. **Edge cases**: "What should happen when [edge case]?"
-3. **Existing behavior**: "Currently [X] works like [this]. Should it change or stay the same?"
-4. **UI/UX details**: "Should there be a loading state? Error message? Confirmation dialog?"
-5. **Data flow**: "Where should this data come from? [Option A] or [Option B]?"
+2. **Existing behavior**: "Currently [X] works like [this]. Should it change or stay the same?"
+3. **Data flow**: "Where should this data come from? [Option A] or [Option B]?"
+4. **Edge cases**: "What should happen when [edge case]?"
+5. **UI/UX details**: "Should there be a loading state? Error message? Confirmation dialog?"
 6. **Breaking changes**: "This might affect [existing feature]. Is that acceptable?"
 
 **Rules for clarification:**
 - Only ask questions you CANNOT answer by reading the codebase
-- Group related questions into one AskUserQuestion call
-- Never ask more than 4 questions total
+- Ask in rounds of up to 5 questions, prioritized by impact on the spec (scope > architecture > data > UX > edge cases)
+- After each round, decide if more clarification is needed based on the answers
+- Stop when you have enough to write the spec — remaining uncertainties go in the spec's "Open Questions" section
 - If the description is clear enough, skip to Phase 3
 
 ## PHASE 3: Codebase Analysis

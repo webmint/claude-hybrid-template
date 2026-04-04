@@ -16,7 +16,7 @@ Lightweight pre-step before `/specify`. Use when you have a vague idea or topic 
 ## Context in the Workflow
 
 ```
-/research (optional) → /clarify (optional) → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
+/research (optional) → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
 ```
 
 `/research` is NOT mandatory. Skip it when you already know what you want to build. Use it when:
@@ -25,13 +25,12 @@ Lightweight pre-step before `/specify`. Use when you have a vague idea or topic 
 - You want to compare approaches before writing a spec
 - You need to validate that an idea fits the project's architecture
 
-### /research vs /clarify vs /specify
+### /research vs /specify
 
 | Command | Input | Purpose | Output |
 |---------|-------|---------|--------|
 | `/research` | Vague idea or topic | Does this fit? What exists? What are the options? | Feasibility report |
-| `/clarify` | Known feature, unclear details | Resolve ambiguities about a specific feature | Clarifications file |
-| `/specify` | Clear feature description | Create a formal contract with acceptance criteria | Spec file |
+| `/specify` | Feature description (any clarity level) | Create a formal contract with acceptance criteria | Spec file |
 
 ## PHASE 1: Load Context
 
@@ -189,7 +188,7 @@ Generate the full report and **render it directly in the console** so the user c
 [One of three outcomes with a concrete next step:]
 
 - **Proceed**: "Run `/specify "[refined description]"` to create a formal specification."
-- **Clarify first**: "Run `/clarify "[specific aspect]"` to resolve [uncertainties] before specifying."
+- **Uncertain areas**: "Run `/specify "[description]"` — it will ask clarifying questions about [uncertainties] before writing the spec."
 - **Not recommended**: "[Reason]. Consider [alternative] instead."
 ```
 
@@ -216,7 +215,6 @@ Present next steps to the user:
 ```
 Next steps:
 - To proceed: `/specify "[refined description]"`
-- To clarify first: `/clarify "[specific aspect]"`
 - To research deeper: `/research "[narrower sub-topic]"`
 - To shelve: no action needed
 ```

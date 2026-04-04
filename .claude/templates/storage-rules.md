@@ -14,7 +14,6 @@ research/
 specs/
   NNN-feature-name/                # One numbered directory per feature
     spec.md                        # Feature specification (/specify)
-    clarifications.md              # Ambiguity resolutions (/clarify) — optional
     plan.md                        # Technical implementation plan (/plan)
     research.md                    # Research findings (/plan) — optional
     data-model.md                  # Entity definitions (/plan) — optional
@@ -117,7 +116,6 @@ Each task file (`specs/NNN-feature/tasks/NNN-title.md`) contains:
 
 ```
 /research     → displays report in console, optionally saves to research/YYYY-MM-DD-[topic-slug].md
-/clarify      → creates specs/NNN-name/clarifications.md (optional)
 /specify      → creates specs/NNN-name/spec.md
 /plan         → creates specs/NNN-name/plan.md (+ research.md, data-model.md, contracts.md if needed)
 /breakdown    → creates specs/NNN-name/tasks/001-xxx.md, 002-xxx.md, ...

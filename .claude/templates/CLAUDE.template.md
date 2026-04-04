@@ -38,18 +38,15 @@ This file provides guidance to Claude Code when working with code in this reposi
 ### Spec-Driven Development Flow
 
 ```
-/setup-wizard → /constitute → /onboard → /research → /clarify → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
-   (once)         (once)       (once)    (optional)  (optional)  (per feat)  (per feat) (per feat)   (per task)    (per feat)  (auto)
+/setup-wizard → /constitute → /onboard → /research → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
+   (once)         (once)       (once)    (optional)  (per feat)  (per feat) (per feat)   (per task)    (per feat)  (auto)
 ```
 
 ### `/research "topic or idea"` (optional)
 Quick feasibility check for vague ideas. Investigates the codebase for related patterns, optionally researches external approaches (signal-based), and displays the full report in the console. You're then asked whether to save — if yes, saves to `research/YYYY-MM-DD-[topic-slug].md`. Does NOT create specs or modify code. Use before `/specify` when you're unsure whether an idea is viable or how it fits.
 
-### `/clarify "feature description"` (optional)
-Scans requirements against 9 ambiguity categories, asks up to 5 multiple-choice questions. Saves decisions to `specs/[feature]/clarifications.md`. Use when requirements are vague.
-
 ### `/specify "feature description"`
-Creates a structured specification with acceptance criteria. Analyzes affected code, saves spec to `specs/[feature]/spec.md`. **Requires approval before proceeding.** Auto-creates a `spec/NNN-short-desc` branch when on the default branch.
+Creates a structured specification with acceptance criteria. Asks clarifying questions as needed (no artificial limit — the AI judges how many based on input clarity). Analyzes affected code, saves spec to `specs/[feature]/spec.md`. **Requires approval before proceeding.** Auto-creates a `spec/NNN-short-desc` branch when on the default branch.
 
 ### `/plan [spec-file]`
 Takes an approved spec and produces a technical plan: architecture decisions, data model, API contracts, research. Saves to `specs/[feature]/plan.md`. **Requires approval before breakdown.**
@@ -180,7 +177,6 @@ research/
 specs/
   001-feature-name/            # Numbered feature directories
     spec.md                    # /specify output
-    clarifications.md          # /clarify output (optional)
     plan.md                    # /plan output
     research.md                # /plan research (optional)
     data-model.md              # /plan data model (optional)
