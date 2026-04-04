@@ -41,16 +41,16 @@ Takes an approved spec and produces a technical plan: research findings, data mo
 
 ### Step 2: Signal Scan
 
-Read the spec and check for these signals:
+Read the spec and check for these signals. **Only flag signals for things NOT already in the project's current stack.** If the spec references a library/technology that's already in the project's dependencies (check `CLAUDE.md`, `package.json`, `pubspec.yaml`, `requirements.txt`, etc.), that is NOT a signal — the team has already made that choice.
 
-| Signal | Example |
-|--------|---------|
-| External library/package mentioned or implied | "use Stripe SDK", "add PDF export" |
-| New integration with third-party service or API | "connect to payment gateway", "OAuth with Google" |
-| Architectural decision where multiple valid approaches exist | "real-time updates" (polling vs SSE vs WebSocket) |
-| Greenfield pattern not yet present in the codebase | first use of caching, first background job, new auth flow |
-| Performance constraints that need benchmarking | "handle 10k concurrent users", "< 200ms response" |
-| Unfamiliar technology referenced in spec | framework, protocol, or tool the codebase hasn't used before |
+| Signal | Example | NOT a signal when... |
+|--------|---------|---------------------|
+| External library/package **not in project dependencies** | "use Stripe SDK" (and Stripe is not in package.json) | Library is already installed |
+| New integration with **unconfigured** third-party service | "connect to payment gateway" (no payment config exists) | Service is already integrated |
+| Architectural decision where multiple valid approaches exist | "real-time updates" (polling vs SSE vs WebSocket) | Always a signal — requires decision |
+| Greenfield pattern not yet present in the codebase | first use of caching, first background job | Pattern already exists in codebase |
+| Performance constraints that need benchmarking | "handle 10k concurrent users", "< 200ms response" | Always a signal — requires research |
+| Technology **not part of the project's current stack** | new protocol or tool the codebase hasn't used | Technology is already in the stack |
 
 **No signals found** → proceed to Phase 1 with codebase research only.
 
@@ -58,10 +58,18 @@ Read the spec and check for these signals:
 
 ### Step 3: Deep Research (when signals detected)
 
-For each signal identified:
+For each signal, choose the appropriate research tool:
+
+**For specific libraries named in the spec:**
+- Try Context7 first (`resolve-library-id` → `query-docs`) to get current documentation and API details
+- If Context7 has no docs for the library, fall back to WebSearch
+
+**For comparing alternatives or architectural decisions:**
 - Use WebSearch to find current best practices and proven approaches
 - Compare at least 2-3 alternatives with pros/cons
 - Check library options: maintenance status, bundle size, community adoption
+
+**For all signals:**
 - Look at real-world examples of similar implementations
 - Verify external API contracts and limitations
 
