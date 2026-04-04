@@ -272,18 +272,21 @@ Skip if verdict is not APPROVED or no `[WIP]` commits exist.
 
 Squash all `[WIP]` and `[checkpoint]` commits from this feature into a single clean commit.
 
-1. Find the oldest `[checkpoint]` commit for this feature (from the first task's checkpoint)
-2. Verify WIP commits haven't been pushed to the remote:
+1. Read `DEFAULT_BRANCH` from `.claude/project-config.json`. If missing, fall back to `main`.
+2. Find the squash base:
+   - **If on a feature branch** (not on DEFAULT_BRANCH): `git merge-base HEAD [DEFAULT_BRANCH]` — this is the commit where the feature branch diverged. No commit message parsing needed.
+   - **If on DEFAULT_BRANCH** (no feature branch): fall back to finding the oldest `[checkpoint]` commit via `git log --oneline --grep="\[checkpoint\]" | tail -1`, then use its parent as the squash base.
+3. Verify WIP commits haven't been pushed to the remote:
    ```
    git log --oneline origin/$(git branch --show-current)..HEAD 2>/dev/null
    ```
-3. If commits are local only → safe to squash:
+4. If commits are local only → safe to squash:
    ```
-   git reset --soft [oldest-checkpoint-parent]
+   git reset --soft [squash-base]
    git commit -m "feat([feature-name]): [spec title — 1-2 sentences from spec overview]"
    ```
    Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
-4. If commits were already pushed → skip squash, warn user
+5. If commits were already pushed → skip squash, warn user
 
 **Source repo squash** (wrapper mode only, `SOURCE_ROOT != "."`): Also run the Source Repo Squash procedure from the Source Repo Auto-Commit section above.
 
