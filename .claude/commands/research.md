@@ -59,8 +59,8 @@ From the user's description, extract 3-7 search terms:
 ### Step 2: Codebase Search
 
 For each keyword:
-- Use Grep to find occurrences in source files
-- Use Glob to find files with related names
+- Use Grep to find occurrences in source files and documentation (`docs/`) — docs may already describe existing functionality related to the topic
+- Use Glob to find files with related names (in both source and docs)
 - Read the most relevant files (up to 10 total across all keywords)
 
 Map what you find:
@@ -97,13 +97,20 @@ Check if the idea involves any of these signals:
 
 **1+ signals found** → Continue to Step 2.
 
-### Step 2: Web Research
+### Step 2: Research
 
-For each signal detected:
+For each signal detected, choose the appropriate tool:
+
+**For specific libraries named by the user:**
+- Try Context7 first (`resolve-library-id` → `query-docs`) to get current documentation
+- If Context7 has no docs for the library, fall back to WebSearch
+
+**For comparing alternatives or architectural patterns:**
 - Use WebSearch to find current best practices and proven approaches
 - Compare 2-3 alternatives with brief pros/cons
 - Check: maintenance status, community adoption, compatibility with project stack
-- Keep it concise — this is a feasibility check, not a full evaluation
+
+Keep it concise — this is a feasibility check, not a full evaluation
 
 ## PHASE 4: Generate Research Report
 
