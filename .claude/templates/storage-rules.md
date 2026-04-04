@@ -14,7 +14,6 @@ research/
 specs/
   NNN-feature-name/                # One numbered directory per feature
     spec.md                        # Feature specification (/specify)
-    clarifications.md              # Ambiguity resolutions (/clarify) — optional
     plan.md                        # Technical implementation plan (/plan)
     research.md                    # Research findings (/plan) — optional
     data-model.md                  # Entity definitions (/plan) — optional
@@ -117,7 +116,6 @@ Each task file (`specs/NNN-feature/tasks/NNN-title.md`) contains:
 
 ```
 /research     → displays report in console, optionally saves to research/YYYY-MM-DD-[topic-slug].md
-/clarify      → creates specs/NNN-name/clarifications.md (optional)
 /specify      → creates specs/NNN-name/spec.md
 /plan         → creates specs/NNN-name/plan.md (+ research.md, data-model.md, contracts.md if needed)
 /breakdown    → creates specs/NNN-name/tasks/001-xxx.md, 002-xxx.md, ...
@@ -217,30 +215,51 @@ Each task file (`specs/NNN-feature/tasks/NNN-title.md`) contains:
 **Status**: Open | In Progress | Fixed
 **Severity**: Critical | Warning | Info
 **Source**: verify | manual
+**Feature**: [spec path, e.g. specs/001-feature/spec.md — or N/A for standalone bugs]
+**AC**: [AC-N — or N/A if not tied to an acceptance criterion]
 **Reported**: [YYYY-MM-DD]
 **Fixed**: [YYYY-MM-DD or empty]
 
 ## Description
 
-[What is wrong — 1-3 sentences]
+[What is wrong — 1-3 sentences. Use behavioral description, not line numbers.]
+
+## Expected Behavior
+
+[What should happen — from the spec's acceptance criterion. Omit for manual bugs where this isn't known.]
+
+## Actual Behavior
+
+[What actually happens — from verification evidence or user observation. Omit for manual bugs where this isn't known.]
 
 ## File(s)
 
 | File | Detail |
 |------|--------|
-| [path/to/file.ts] | [line number or area, if known] |
+| [path/to/file.ts] | [area or function — not line numbers, they shift after other fixes] |
 
 ## Evidence
 
 [How this was discovered — error message, verification report excerpt, user observation]
+
+## Related Issues
+
+[Other bugs filed in the same batch, if any. Omit if standalone.]
+- bugs/NNN-xxx.md — [short title]
 
 ## Fix Notes
 
 [Filled in by /fix after resolution — root cause, what was changed, commit reference]
 ```
 
+**Field notes:**
+- `Feature` and `AC` are populated by `/verify`. `/report-bug` sets them to N/A.
+- `Expected Behavior` and `Actual Behavior` are populated by `/verify` (from spec + verification evidence). `/report-bug` may omit them if unknown.
+- `Related Issues` is populated when multiple bugs are filed in the same batch. Helps `/fix` know what else is being addressed.
+- `File(s)` should use area/function references, not line numbers — line numbers shift after other fixes are applied.
+
 ### How Bug Files Are Created
-- `/verify` Phase 10 triage — user selects "report for later" or "fix now" on a verification issue
+- `/verify` Phase 10 — user requests batch bug filing for verification issues
 - `/report-bug` — standalone manual bug reporting
 
 ### How Bug Files Are Resolved

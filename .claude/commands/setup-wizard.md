@@ -248,6 +248,16 @@ The `tech-writer` agent is hardcoded to `sonnet` regardless of tier choices — 
 
 (Default to "Auto" for frontend/fullstack, "Off" for library/CLI if user skips.)
 
+**Conditional: Chrome DevTools MCP** (if Auto or Browser only):
+Add the chrome-devtools MCP server to `.mcp.json`:
+```json
+"chrome-devtools": {
+  "command": "./scripts/chrome-devtools-mcp.sh",
+  "args": []
+}
+```
+If AC_VERIFICATION is "off" or "api-only", do NOT add chrome-devtools to `.mcp.json` — it would be useless for these projects.
+
 ## STEP 3: Generate Configuration Files
 
 Based on detection + user answers, generate ALL of the following files. Read each template from `.claude/templates/`, fill in the placeholders, and write the output files.
@@ -370,6 +380,7 @@ For each agent:
 - Replace `{{TESTING}}` with actual test framework
 - Replace `{{LINT_CONFIG}}` with actual linting setup
 - Replace `{{STYLING}}` with actual CSS approach
+- Replace `{{TYPE_SAFETY_RULES}}` with language-appropriate type safety rules. Generate 3-5 bullet points covering: escape-hatch types to avoid, null/optional safety patterns, unsafe cast/assertion patterns, and any language-specific type concerns. Base these on `{{LANGUAGE}}` — use your knowledge of the language's type system. Example for TypeScript: "No `any` types without justification, use optional chaining for nullable access, no unsafe type assertions." Example for Dart: "No `dynamic` without justification, proper null safety with `late`/`required`, avoid `as` casts." For unfamiliar languages, generate generic rules: "Avoid escape-hatch types, handle nullable values explicitly, no unsafe type casts."
 - Add project-specific patterns you discovered during detection (existing projects) or framework best-practice patterns (greenfield) — add these as NEW sections or append to existing sections, never replace template content
 - Replace `{{MODEL_THINK}}`, `{{MODEL_DO}}`, or `{{MODEL_VERIFY}}` with the model chosen for each tier in Question 8 (defaults: opus/sonnet/sonnet). Each template uses the placeholder for its tier.
 - **Greenfield**: Use framework-idiomatic examples in agents since there's no project code to reference yet
@@ -415,7 +426,7 @@ Replace `{{WORKSPACE_MODE}}` with `standalone` or `wrapper`, and `{{SOURCE_ROOT}
 
 ### 3.5: Create constitution.md stub
 
-Generate `constitution.md` at project root with a header and a note that it will be fully populated when `/constitute` is run. Include the project type and framework as initial metadata.
+Read `.claude/templates/constitution.template.md` and copy it to `constitution.md` at project root. Replace header placeholders (`{{PROJECT_NAME}}`, `{{DATE}}`, `{{PROJECT_TYPE}}`, `{{FRAMEWORK}}`, `{{LANGUAGE}}`, `{{ERROR_HANDLING}}`, `{{TESTING}}`) with actual values from detection and user answers. Leave all `_Run /constitute to populate_` sections and all `[universal]` sections intact — these are the sentinel strings that other commands check to verify the constitution has been populated.
 
 ### 3.6: Create docs/ folder
 
@@ -481,11 +492,20 @@ The keys must be the exact placeholder names (without `{{ }}`). Example:
   "MODEL_VERIFY": "sonnet",
   "AC_VERIFICATION": "auto",
   "AC_VERIFICATION_URL": "http://localhost:5173",
-  "AC_VERIFICATION_API_BASE": ""
+  "AC_VERIFICATION_API_BASE": "",
+  "DEFAULT_BRANCH": "main",
+  "TYPE_SAFETY_RULES": "- No `any` types without documented justification\n- Null/undefined properly handled (optional chaining, null checks)\n- Generic types used correctly\n- No unsafe type assertions"
 }
 ```
 
-**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY`, `AC_VERIFICATION`, `AC_VERIFICATION_URL`, `AC_VERIFICATION_API_BASE`.
+**Detecting DEFAULT_BRANCH**: Use this cascade during Step 1:
+1. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null` → parse branch name
+2. Check if `main` exists: `git show-ref --verify --quiet refs/heads/main`
+3. Check if `master` exists: `git show-ref --verify --quiet refs/heads/master`
+4. Check if `develop` exists: `git show-ref --verify --quiet refs/heads/develop`
+5. If none found, default to `main`
+
+**Required keys**: `PROJECT_NAME`, `PROJECT_TYPE`, `FRAMEWORK`, `LANGUAGE`, `BUILD_TOOL`, `BUILD_COMMAND`, `TYPE_CHECK_COMMAND`, `LINT_COMMAND`, `SOURCE_ROOT`, `PROJECT_MODE`, `ARCHITECTURE`, `ERROR_HANDLING`, `API_LAYER`, `STATE_MANAGEMENT`, `STYLING`, `MONOREPO_TOOL`, `TESTING`, `PROJECT_PATHS`, `PROJECT_STRUCTURE`, `DEV_COMMANDS`, `AGENT_LIST`, `WRAPPER_MODE_SECTION`, `COMMIT_ATTRIBUTION`, `MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY`, `AC_VERIFICATION`, `AC_VERIFICATION_URL`, `AC_VERIFICATION_API_BASE`, `DEFAULT_BRANCH`, `TYPE_SAFETY_RULES`.
 
 Use the exact same values you substituted into the templates. For multi-line values, use `\n` for newlines in the JSON string. For values that don't apply, use `"N/A"` (not empty string).
 

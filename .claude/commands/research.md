@@ -16,7 +16,7 @@ Lightweight pre-step before `/specify`. Use when you have a vague idea or topic 
 ## Context in the Workflow
 
 ```
-/research (optional) → /clarify (optional) → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
+/research (optional) → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
 ```
 
 `/research` is NOT mandatory. Skip it when you already know what you want to build. Use it when:
@@ -25,13 +25,12 @@ Lightweight pre-step before `/specify`. Use when you have a vague idea or topic 
 - You want to compare approaches before writing a spec
 - You need to validate that an idea fits the project's architecture
 
-### /research vs /clarify vs /specify
+### /research vs /specify
 
 | Command | Input | Purpose | Output |
 |---------|-------|---------|--------|
 | `/research` | Vague idea or topic | Does this fit? What exists? What are the options? | Feasibility report |
-| `/clarify` | Known feature, unclear details | Resolve ambiguities about a specific feature | Clarifications file |
-| `/specify` | Clear feature description | Create a formal contract with acceptance criteria | Spec file |
+| `/specify` | Feature description (any clarity level) | Create a formal contract with acceptance criteria | Spec file |
 
 ## PHASE 1: Load Context
 
@@ -59,8 +58,8 @@ From the user's description, extract 3-7 search terms:
 ### Step 2: Codebase Search
 
 For each keyword:
-- Use Grep to find occurrences in source files
-- Use Glob to find files with related names
+- Use Grep to find occurrences in source files and documentation (`docs/`) — docs may already describe existing functionality related to the topic
+- Use Glob to find files with related names (in both source and docs)
 - Read the most relevant files (up to 10 total across all keywords)
 
 Map what you find:
@@ -97,13 +96,20 @@ Check if the idea involves any of these signals:
 
 **1+ signals found** → Continue to Step 2.
 
-### Step 2: Web Research
+### Step 2: Research
 
-For each signal detected:
+For each signal detected, choose the appropriate tool:
+
+**For specific libraries named by the user:**
+- Try Context7 first (`resolve-library-id` → `query-docs`) to get current documentation
+- If Context7 has no docs for the library, fall back to WebSearch
+
+**For comparing alternatives or architectural patterns:**
 - Use WebSearch to find current best practices and proven approaches
 - Compare 2-3 alternatives with brief pros/cons
 - Check: maintenance status, community adoption, compatibility with project stack
-- Keep it concise — this is a feasibility check, not a full evaluation
+
+Keep it concise — this is a feasibility check, not a full evaluation
 
 ## PHASE 4: Generate Research Report
 
@@ -182,7 +188,7 @@ Generate the full report and **render it directly in the console** so the user c
 [One of three outcomes with a concrete next step:]
 
 - **Proceed**: "Run `/specify "[refined description]"` to create a formal specification."
-- **Clarify first**: "Run `/clarify "[specific aspect]"` to resolve [uncertainties] before specifying."
+- **Uncertain areas**: "Run `/specify "[description]"` — it will ask clarifying questions about [uncertainties] before writing the spec."
 - **Not recommended**: "[Reason]. Consider [alternative] instead."
 ```
 
@@ -209,7 +215,6 @@ Present next steps to the user:
 ```
 Next steps:
 - To proceed: `/specify "[refined description]"`
-- To clarify first: `/clarify "[specific aspect]"`
 - To research deeper: `/research "[narrower sub-topic]"`
 - To shelve: no action needed
 ```

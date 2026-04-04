@@ -1,12 +1,11 @@
 {
-  "version": "1.24.1",
+  "version": "1.25.0",
   "description": "Manifest for AIDevTeamForge update system",
 
   "templateOwned": {
     "description": "Files 100% owned by the template — safe to overwrite on update",
     "patterns": [
       ".claude/commands/breakdown.md",
-      ".claude/commands/clarify.md",
       ".claude/commands/constitute.md",
       ".claude/commands/execute-task.md",
       ".claude/commands/plan.md",
@@ -21,6 +20,7 @@
       ".claude/commands/research.md",
       ".claude/commands/summarize.md",
       ".claude/commands/_recovery.md",
+      ".claude/commands/_agent-assignment.md",
       ".claude/commands/_context-maintenance.md",
       ".claude/commands/_multi-task-continuation.md",
       ".claude/commands/_tech-writer-onboarding.md",
@@ -78,6 +78,18 @@
         "description": "Add new template lines, keep existing project lines"
       }
     }
+  },
+
+  "templateRepoOnly": {
+    "description": "Files that exist only in the template repo — NOT copied to target projects during install or update",
+    "patterns": [
+      ".claude/commands/release.md",
+      "install.sh",
+      "update.sh",
+      "AI-ISSUES-AUDIT.md",
+      "COMPETITIVE-ANALYSIS.md",
+      "QUALITY-AUDIT.md"
+    ]
   },
 
   "copyIfMissing": {

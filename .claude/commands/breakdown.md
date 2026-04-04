@@ -98,24 +98,7 @@ For each task, determine whether it is **design-decision** or **mechanical**:
 
 #### Step 2: Assign Agent
 
-For **design-decision** tasks, assign by file layer:
-
-| Files in... | Agent |
-|-------------|-------|
-| Domain models, interfaces, contracts, type definitions, architectural decisions | architect |
-| State management with orchestration logic (BLoC, Redux reducers with business rules, Pinia stores with computed logic) | architect |
-| API endpoints, controllers, middleware, services, server-side logic | backend-engineer |
-| UI components, styles, routes, composables, stores | frontend-engineer |
-| Mobile screens, navigation, native modules, platform-specific code, app lifecycle | mobile-engineer |
-| Both core + UI (tightly coupled change) | architect first, then frontend-engineer |
-| Bug investigation with runtime symptoms | runtime-debugger |
-| Performance-critical path or optimization task | performance-analyst |
-| Auth, secrets, input validation, security hardening | security-reviewer |
-| Database schemas, migrations, queries, seed data | db-engineer |
-| API contract design, OpenAPI specs, endpoint structure | api-designer |
-| CI/CD, Docker, deployment config, infrastructure | devops-engineer |
-| Data migration scripts, backward compatibility layers | migration-engineer |
-| Accessibility, design system compliance, UI audit | design-auditor |
+For **design-decision** tasks, read `.claude/commands/_agent-assignment.md` and assign by file layer using the assignment table.
 
 For **mechanical** tasks, assign to the agent who owns the **nearest dependency** — the upstream producer or the downstream consumer — whichever makes the task a natural extension of work that agent is already doing:
 
@@ -178,7 +161,7 @@ For each task, generate a `## Contracts` section with `### Expects` and `### Pro
 - **Produces (postconditions)**: What must be true in the codebase after this task completes. These are independently verified by `/execute-task` via grep/read.
 
 **Rules**:
-- 2-5 items per section. Keep them concrete and grep-verifiable.
+- 2-5 items per section. Keep them concrete and code-verifiable (verifiable by reading the source file).
 - Reference **semantic identifiers** (function names, export names, interface names, field names) — never line numbers. Line numbers shift as earlier tasks modify files.
 - Examples of good contracts:
   - `src/types/Cart.ts` exports interface `CartTotals` with fields `subtotal: number`, `total: number`
@@ -188,7 +171,7 @@ For each task, generate a `## Contracts` section with `### Expects` and `### Pro
 - Examples of bad contracts:
   - "Cart totals work correctly" (not verifiable)
   - "Line 45 of CartBLoC.ts returns the right value" (line numbers shift)
-  - "Performance is acceptable" (not grep-verifiable)
+  - "Performance is acceptable" (not code-verifiable)
 
 ### Doc Reference Rules
 

@@ -17,7 +17,7 @@ Picks up one or more tasks from the breakdown, selects the assigned agent for ea
   - **Empty**: Execute the next pending task (lowest number with all dependencies satisfied) from the active feature.
   - **Single number** (e.g. `3`): Execute that specific task in the active feature.
   - **Feature/task** (e.g. `001/3` or `user-auth/3`): Execute a specific task in a specific feature.
-  - **Comma-separated** (e.g. `1,3,5`): Execute these specific tasks sequentially in the active feature. Each task gets the full Phase 0–7.5 treatment.
+  - **Comma-separated** (e.g. `1,3,5`): Execute these specific tasks sequentially in the active feature. Each task gets the full Phase 0–7 treatment.
   - **Range** (e.g. `1-5`): Execute tasks 1 through 5 sequentially. Equivalent to `1,2,3,4,5`.
   - **`all`**: Execute all pending tasks in the active feature, in dependency order.
 
@@ -72,7 +72,7 @@ Then, build the **task queue** based on `$ARGUMENTS`:
 - Task queue = those tasks in the given order
 - Validate each task exists and is not already Complete
 
-**If `$ARGUMENTS` contains `-` but no `/`** (e.g. `1-5`):
+**If `$ARGUMENTS` matches the pattern `number-number`** (e.g. `1-5`, `01-10` — both parts must be numeric):
 - Parse as range: start number to end number (inclusive)
 - Task queue = expanded range in order
 - Skip any tasks in the range that are already Complete
@@ -83,7 +83,18 @@ Then, build the **task queue** based on `$ARGUMENTS`:
 **If `$ARGUMENTS` is empty**:
 - Task queue = `[next pending task]` (lowest number with all dependencies satisfied)
 
-For multi-task queues: the current task is always the first item. After it completes (Phase 7.5), the remaining queue is processed via the Multi-Task Continuation phase (Phase 8).
+**If `$ARGUMENTS` matches none of the above patterns**:
+- STOP with: "Unrecognized argument format: `[input]`. Expected: a task number (e.g. `3`), range (`1-5`), comma list (`1,3,5`), `all`, or feature/task (`001/3`)."
+
+### 1.1.1: Validate Task Queue
+
+After building the task queue, validate every task number in it before proceeding:
+
+1. For each task number in the queue, check that a matching task file exists in `specs/NNN-feature/tasks/` (glob for `NNN-*.md` where NNN matches the task number, zero-padded).
+2. If any task number has no matching file, STOP with: "Task [N] does not exist in `specs/[feature]/tasks/`. Available tasks: [list available task numbers and titles]."
+3. If the task queue is empty after filtering (e.g., all tasks in a range are already Complete), inform the user: "No pending tasks match the requested range/selection."
+
+For multi-task queues: the current task is always the first item. After it completes (Phase 4), the remaining queue is processed via Phase 5.3 (Multi-Task Continuation).
 
 ### 1.2: Load Context
 
@@ -102,22 +113,12 @@ For multi-task queues: the current task is always the first item. After it compl
 5. Read `.claude/memory/MEMORY.md`
 6. Read files listed in the task's "Files" section. If total estimated lines exceed 500, read only the sections relevant to the change (use Change Details to identify which functions/blocks to focus on). For smaller file sets, read them fully.
 7. **Read referenced documentation**: If the task file has a `Context docs` field with specific file paths, read those files. Do not search `docs/` broadly — the breakdown already identified which docs are relevant for this task.
+8. **Read prior task completion notes**: For each completed task in this feature (check task index for tasks with Status: Complete), read the `## Completion Notes` section from their task file. This provides context about what earlier tasks decided, which files they actually changed, and any deviations from the plan. For features with many completed tasks (10+), read only the completion notes from tasks listed in the current task's "Depends on" field and the 3 most recently completed tasks.
 
 Verify:
 - Task exists and is not already completed
 - All dependencies (listed in "Depends on") are marked complete
 - The assigned agent matches what's available
-
-### 1.3: AC Verification Readiness Check
-
-Read `AC_VERIFICATION` from `.claude/project-config.json`. If the value is `"off"` or the key does not exist, skip this check entirely.
-
-If `AC_VERIFICATION` is `"auto"` or `"browser-only"`:
-1. Attempt to call `mcp__chrome-devtools__list_pages` as a lightweight probe.
-2. If it **fails** (MCP not available):
-   - Display: "Note: Chrome DevTools MCP is not running. When `/verify` runs after this task, frontend AC items will be verified by code reading instead of browser interaction. To enable browser-based AC verification, start the WebStorm JS debugger before running `/verify`."
-   - This is informational only — do not block execution.
-3. If it **succeeds**: no message needed.
 
 ## PHASE 2: Pre-Flight Check
 
@@ -131,7 +132,7 @@ Before writing code, verify:
    - **New files (greenfield)**: Does the target directory exist? If not, it should be created as part of this task or a prior task
 5. **Type safety**: Read the type definitions involved and verify the change is type-safe on paper. For greenfield, verify the proposed types align with the constitution's patterns
 6. **Contract preconditions**: Read the task's `## Contracts → ### Expects` section. For each precondition:
-   - Use Grep or Read to verify the condition holds in the current codebase (e.g., check that an export exists, an interface has expected fields, a function exists with the expected name)
+   - Verify each condition holds in the current codebase. For simple existence checks (export exists, function exists), Grep is sufficient. For structural checks (interface has specific fields, function has specific signature), Read the file and verify the full structure — do not rely on Grep alone for structural contracts
    - If a precondition fails:
      - Identify which upstream task should have produced it (check the task's "Depends on" and the upstream task's "Produces")
      - If the upstream task is marked Complete but its postcondition is not met, report: **"Contract violation: Task [N] expects [X] but it's not present. Task [M] (which should have produced it) is marked Complete. Task [M]'s output may be semantically incorrect. Review Task [M]'s code before proceeding."**
@@ -184,16 +185,7 @@ If ANY pre-flight check fails, stop and inform the user with specifics.
 
 ## PHASE 3: Execute
 
-### 3.1: Create Task Tracking
-
-Use TaskCreate to create a tracking task:
-- Subject: Task [N] title from the breakdown
-- Description: Full description from the breakdown
-- ActiveForm: "Implementing [short description]"
-
-Set it to `in_progress`.
-
-### 3.2: Launch Agent
+### 3.1: Launch Agent
 
 **MANDATORY**: You MUST use the Agent tool to launch the assigned agent for every task, regardless of task size or complexity. You are the orchestrator — your role is to delegate, verify, and coordinate, never to write implementation code yourself. Even if the task is a single line change, a boilerplate file, or "trivial" — launch the agent. Skipping the agent launch violates the team's division of responsibilities: you manage the process, agents write the code.
 
@@ -227,7 +219,7 @@ You are executing Task [N] from an approved task breakdown.
 3. Known pitfalls for this area: [from MEMORY.md]
 4. Every file you change must pass the project's type checker (see Type Check Command in CLAUDE.md)
 5. Every file you change must pass the project's linter (see Lint Command in CLAUDE.md)
-6. Document any new functions/variables you create
+6. Add inline documentation (JSDoc/docstrings) to every new public function, class, type, or interface you create. This is part of writing the code, not a separate step
 
 ## Documentation Context
 [Content from the doc files listed in the task's Context docs field, if any. Omit this section if Context docs is "None".]
@@ -251,9 +243,9 @@ After the agent completes, immediately create a WIP git commit to preserve the w
 git add [files you modified] .claude/wip.md && git commit -m "[WIP] Task [N]: [title] — agent execution complete"
 ```
 
-Update `.claude/wip.md` — change Phase to `4 (Mark Complete)`.
+Update `.claude/wip.md` — change Phase to `3.2 (Verification)`.
 
-### 3.3: Post-Agent Verification (with Self-Repair)
+### 3.2: Post-Agent Verification (with Self-Repair)
 
 After the agent completes, run verification:
 
@@ -262,7 +254,7 @@ After the agent completes, run verification:
 3. **Linter passes**: Run the Lint Command from CLAUDE.md on all changed files
 4. **Project builds** (if Build Command is specified in CLAUDE.md): Run the build command. For wrapper mode projects, run inside the Source Root directory. Skip this check if no Build Command is configured.
 5. **Done conditions met**: Check each "Done when" item from the task
-6. **Contract postconditions**: Read the task's `## Contracts → ### Produces` section. For each postcondition, use Grep or Read to verify it holds in the codebase (e.g., verify the export exists, the interface has the expected fields, the function has the expected name). Track pass/fail for each postcondition.
+6. **Contract postconditions**: Read the task's `## Contracts → ### Produces` section. For each postcondition, verify it holds in the codebase. For simple existence checks (export exists, function exists), Grep is sufficient. For structural checks (interface has specific fields, function has specific signature), Read the file and verify the full structure. Track pass/fail for each postcondition.
 7. **Run affected tests**: Search for test files (`*.test.*`, `*.spec.*`) in the same directories as changed files. If test files exist and a test runner is available (check CLAUDE.md for Test Command, or detect via package.json scripts), run them. If no test files or test runner exist, skip this check. Test failures are treated the same as other verification failures.
 8. **Wrapper isolation check** (wrapper mode only): Verify no Claude artifacts were created inside the Source Root. Scan `SOURCE_ROOT/` for files matching: `.claude/`, `specs/`, `docs/overview.md`, `docs/architecture.md`, `constitution.md`, `CLAUDE.md`, `bugs/`, `research/`, `.mcp.json`. If any are found, flag as a verification failure.
 
@@ -294,10 +286,51 @@ For each repair attempt:
 - Keep the WIP marker and commits so the user can inspect the state
 - Suggest: "Run `/execute-task [N]` again after manually fixing, or use recovery options"
 
-## PHASE 4: Mark Complete
+### 3.3: Code Review
 
-1. Update the task tracking (TaskUpdate → completed)
-2. In the task file (`specs/NNN-feature/tasks/NNN-title.md`):
+Update `.claude/wip.md` — change Phase to `3.3 (Code Review)`.
+
+After verification passes, launch the **code-reviewer** agent on all files changed by the task.
+
+Provide the agent with:
+1. The list of changed files (`git diff --name-only` against the checkpoint commit)
+2. The task description and scope constraints
+3. The constitution's relevant rules
+4. Relevant entries from `.claude/memory/MEMORY.md`
+
+The agent will check: constitution compliance, architecture & patterns, type safety, security basics, code quality (including inline documentation on new public APIs), and memory pitfalls.
+
+**If verdict is APPROVE or warnings only** → proceed to Phase 4. Include warnings in the task report.
+
+**If verdict is REQUEST CHANGES or BLOCK** → report findings to the user immediately:
+
+```
+⚠️ Code review for Task [N] found issues:
+
+#### Critical (blocks completion)
+- [file:line] — [description]
+
+#### Warning (should fix)
+- [file:line] — [description]
+
+Options:
+1. **Address now** — fix the issues, then re-run review
+2. **Continue** — proceed despite warnings (Critical issues CANNOT be skipped)
+3. **Stop** — halt execution, keep WIP state for manual handling
+```
+
+Wait for user response:
+- **Address now**: Launch a repair agent to fix the review issues. After fixes, re-run the code-reviewer once. If still BLOCK after this second review, STOP and report: "Code review issues persist after repair. Address manually and re-run `/execute-task [N]`."
+- **Continue**: Only allowed if there are no Critical issues (warnings only). Proceed to Phase 4 with warnings noted.
+- **Stop**: Keep WIP marker and commits. Report completed state for manual handling.
+
+## PHASE 4: Complete & Report
+
+Update `.claude/wip.md` — change Phase to `4 (Complete)`.
+
+### 4.1: Mark Task Complete
+
+1. In the task file (`specs/NNN-feature/tasks/NNN-title.md`):
    - Change **Status** to `Complete`
    - In the **Done When** section, change every `- [ ]` to `- [x]` for conditions that were verified as met
    - Fill in the Completion Notes section:
@@ -307,78 +340,20 @@ For each repair attempt:
      **Contract**: Expects [X/Y verified] | Produces [X/Y verified]
      **Notes**: [any deviations from plan or things to watch]
      ```
-3. Update the task index (`specs/NNN-feature/tasks/README.md`) — mark this task's status as Complete
+2. Update the task index (`specs/NNN-feature/tasks/README.md`) — mark this task's status as Complete
 
-After marking the task complete in task files, commit:
+### 4.2: Commit & Cleanup
+
+Commit all changes (source files, task files, any review fixes) in a single `[WIP]` commit:
 ```
-git add specs/ .claude/wip.md && git commit -m "[WIP] Task [N]: [title] — marked complete"
-```
-
-Update `.claude/wip.md` — change Phase to `5 (Documentation Update)`.
-
-## PHASE 5: Documentation Update (MANDATORY)
-
-After code is verified, launch the **tech-writer** agent to update documentation.
-
-### 5.0: Load Tech-Writer Agent
-
-Read `.claude/agents/tech-writer.md` and include its **full content** as the opening section of the agent prompt. This file contains the tech-writer's complete Normal Mode workflow (6 steps, 2-layer documentation model, skip/include criteria, formatting rules).
-
-If `.claude/agents/tech-writer.md` does not exist, warn: "⚠️ Tech-writer agent file not found — documentation quality may be reduced. Run `/setup-wizard` to generate agent files." Proceed with the inline prompt alone.
-
-### 5.1: Build and Launch Tech-Writer Prompt
-
-Construct the tech-writer prompt with two parts:
-
-**Part 1** (if agent file exists): The full content of `.claude/agents/tech-writer.md` (this gives the agent its complete workflow and rules — it will auto-select Normal Mode).
-
-**Part 2** (always included): The task-specific context below.
-
-```
-You are updating documentation after Task [N] from an approved task breakdown.
-
-## Completed Task
-[Full task description and completion notes from breakdown]
-
-## Feature Context
-[Relevant section from spec.md — what this feature does and why]
-
-## Files Changed
-[List of files actually changed, from completion notes]
-
-## Existing Docs
-[Output of Glob on docs/ — so you know what already exists]
-
-## Instructions
-
-Address both documentation layers (inline docs + docs/ folder) using the document-when/skip-when criteria and rules from the tech-writer workflow (Part 1). Apply them to the task context above.
-
-If you determine documentation is not needed, justify by listing which skip criteria apply and confirming no "Document when" criteria are triggered.
+git add [changed source files] specs/ && git commit -m "[WIP] Task [N]: [title] — complete"
 ```
 
-Launch the tech-writer agent with the combined prompt (Part 1 + Part 2) using the Agent tool.
+Delete `.claude/wip.md`.
 
-### 5.2: Post-Doc Verification
+> **No per-task squash**: WIP commits accumulate across tasks and are squashed into a clean commit by `/verify` Phase 9.5 when the feature is approved.
 
-After the tech-writer completes, verify documentation was handled:
-
-1. **Check for new AND changed public APIs**: Run `git diff [checkpoint-commit-hash]` (not just `--name-only`) and scan changed files for:
-   - New exported functions, classes, components, or types — verify they have inline documentation
-   - Changed signatures on existing public exports (parameter or return type changes) — verify inline docs are updated to match
-2. **Check `docs/` for updates**: If public APIs were added, behavior changed, or architecture was restructured, verify that at least one file in `docs/` was created or modified (check `git diff --name-only` for paths starting with `docs/`).
-3. **Check for stale doc references**: If any existing `docs/` file references the changed source files (search docs/ for the filenames), verify those references are still accurate.
-4. **If the tech-writer reported "No documentation needed"**: Verify the justification — check that the listed skip criteria actually apply AND that none of the "Document when" criteria are triggered. If the justification is insufficient or contradicted by the diff, re-invoke the tech-writer with explicit instruction: "The following changes require documentation: [list specific APIs/behaviors]. Add inline docs and update docs/ accordingly."
-
-### 5.3: Commit Doc Changes
-
-If the tech-writer made any changes, commit them:
-```
-git add docs/ [source files with doc changes] && git commit -m "[WIP] Task [N]: [title] — documentation update"
-```
-
-Update `.claude/wip.md` — change Phase to `6 (Report)`.
-
-## PHASE 6: Report
+### 4.3: Report
 
 Provide a concise summary to the user:
 
@@ -396,51 +371,31 @@ Provide a concise summary to the user:
 - Done conditions: [all met / exceptions]
 - Contracts: Expects [X/Y] | Produces [X/Y]
 
-**Documentation**: [Updated docs/features/X.md / Created docs/api/Y.md / No docs needed]
+**Code review**: [APPROVE / APPROVE with warnings: (list) / addressed after review]
 
 **Spec criteria addressed**: AC-[numbers]
 
 **Next task**: [NNN]-[title] (ready / blocked by [NNN])
 ```
 
-### Final Commit and WIP Cleanup
+## PHASE 5: Bookkeeping
 
-1. Squash all `[WIP]` and `[checkpoint]` commits for this task into a single clean commit.
-
-   First, verify WIP commits haven't been pushed to the remote:
-   ```
-   git log --oneline origin/$(git branch --show-current)..HEAD 2>/dev/null
-   ```
-   - If this shows commits (or fails because there's no upstream) → WIP commits are **local only** → safe to squash:
-     ```
-     git reset --soft [checkpoint-commit-hash]
-     git commit -m "feat([feature-name]): Task [N] — [title]"
-     ```
-     If the commit fails after the reset (pre-commit hook rejection, etc.), do NOT delete `.claude/wip.md`. Inform the user: "Squash reset was applied but the commit failed. Your changes are staged. Run `git commit` manually to complete, or `git reset HEAD~0` to unstage."
-   - If this shows **no commits** (HEAD matches remote) → WIP commits were already pushed → **skip squashing** and keep commits as-is.
-
-   Follow the **Commit Convention** section in CLAUDE.md (format and attribution rules).
-
-2. Delete `.claude/wip.md` (only after the final commit succeeds)
-
-The task is now fully committed with a clean single commit and no WIP artifacts.
-
-> **Source repo note** (wrapper mode): Source WIP commits are intentionally NOT squashed here. They accumulate across tasks and are squashed into a single clean commit when `/verify` approves the feature (Phase 9.5).
-
-## PHASE 7: Memory Update
+### 5.1: Memory Update
 
 If anything unexpected happened during execution (a gotcha, a pattern discovery, a near-mistake), update `.claude/memory/MEMORY.md`.
 
 Use the format: `- **[AREA]**: [observation] _(Task N / Feature NNN)_`. Add entries under the matching section in MEMORY.md (Known Pitfalls, What Worked, What Failed, External API Quirks, etc.).
 
-## PHASE 7.5: Context Maintenance
+### 5.2: Context Maintenance
 
 Read `.claude/commands/_context-maintenance.md` and follow its instructions.
 Context: the current feature directory, the task number and title just completed.
 
-## PHASE 8: Multi-Task Continuation
+**Critical**: This includes auto-verify detection. After updating session state, you MUST check whether ALL tasks in the feature are Complete by reading `specs/[feature]/tasks/README.md`. If every task has Status: Complete, invoke `/verify` immediately — do not just report completion and stop. If any tasks are still pending, continue with 5.3.
 
-This phase only applies when the task queue (built in Phase 1.1) contains more than one task.
+### 5.3: Multi-Task Continuation
+
+This step only applies when the task queue (built in Phase 1.1) contains more than one task. If single-task mode, skip this step.
 
 Read `.claude/commands/_multi-task-continuation.md` and follow its instructions.
 Context: the remaining task queue, the current feature directory.
@@ -449,8 +404,9 @@ Context: the remaining task queue, the current feature directory.
 
 1. **Always delegate** — NEVER write implementation code yourself. Every task MUST be executed by launching the assigned agent via the Agent tool, no matter how small or trivial the task appears. You are the orchestrator: you load context, launch agents, verify results, and coordinate. If you catch yourself about to edit a source file directly instead of delegating to an agent, stop — that is a rule violation.
 2. **Scope discipline** — if the agent changes files outside the task scope, revert those changes and investigate
-3. **Self-repair before escalation** — when verification fails, attempt automatic repair (up to 3 times) before stopping. Never skip repair attempts.
+3. **Self-repair before escalation** — when automated verification fails (type checker, linter, build), attempt automatic repair (up to 3 times) before stopping. Code review findings are reported to the user, not auto-repaired.
 4. **Hard stop on repair failure** — if all 3 repair attempts fail, stop the entire execution chain (including remaining queued tasks). Do not proceed with broken state.
-5. **Documentation is non-negotiable** — Phase 5 MUST run for every task, including in multi-task mode. The tech-writer agent must be invoked and its output verified.
+5. **Inline docs are the agent's job** — the implementing agent must add inline documentation (JSDoc/docstrings) to every new public function, class, type, or interface. The code-reviewer verifies this. Feature-level docs in `docs/` are handled by the tech-writer at `/verify` time.
 6. **Crash safety** — always write .claude/wip.md before starting execution and delete it only after the final commit. If wip.md exists at the start, enter recovery flow.
 7. **Context hygiene** — fully overwrite .claude/session-state.md after each task (never append). Keep it under 40 lines.
+8. **No per-task squash** — WIP commits accumulate and are squashed by `/verify`. Do not run `git reset --soft` during execute-task.

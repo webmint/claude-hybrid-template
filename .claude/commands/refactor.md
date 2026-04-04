@@ -148,15 +148,7 @@ For each opportunity found, note: the category, affected lines, what's wrong, wh
 
 ### 2.3: Select Agent
 
-Based on the file location and code characteristics from 2.1, select the execution agent:
-
-- If the file is a **UI component, view, or deals with styling/state management/routing** → **frontend-engineer**
-- If the file is in the **core/domain/backend layer** (service, repository, use case, controller, middleware) → **architect**
-- If the file is a **backend endpoint or route handler** → **backend-engineer**
-- If the file is a **shared utility or type definition** → **architect**
-- If unclear → **architect** (safest default for structural changes)
-
-Cross-reference with `CLAUDE.md` project structure and `{{PROJECT_PATHS}}` in agent templates to confirm the selection.
+Read `.claude/commands/_agent-assignment.md` and select the agent based on the target file's layer and the code characteristics from 2.1. Cross-reference with `CLAUDE.md` project structure to confirm the selection. If the selected agent doesn't exist in `.claude/agents/`, fall back to `architect`.
 
 ### 2.4: Present Refactoring Proposal
 
@@ -336,6 +328,8 @@ For each repair attempt:
 
 ## PHASE 6: Code Review
 
+Update `.claude/wip.md` — change Phase to `6 (Code Review)`.
+
 Launch the **code-reviewer** agent on ALL changed files.
 
 Provide the agent with:
@@ -348,18 +342,33 @@ The agent will check: constitution compliance, architecture & patterns, type saf
 
 **Additional check for refactoring**: Verify the refactored code actually improves on the original (not a lateral move or regression in readability).
 
-**If the agent returns BLOCK or critical issues** (max 1 additional review cycle):
-- Apply the required fixes
-- Re-run verification (Phase 5 checks)
-- Commit:
-  ```
-  git add [files you modified] .claude/wip.md && git commit -m "[WIP] Refactor: [short description] — review fixes"
-  ```
-- If still BLOCKED after this additional cycle, STOP and report the remaining issues to the user. Do not attempt further review cycles.
+**If verdict is APPROVE or warnings only** → proceed to Phase 7. Include warnings in the report.
 
-**If the agent returns APPROVE or only warnings/info** → proceed to Phase 7.
+**If verdict is REQUEST CHANGES or BLOCK** → report findings to the user immediately:
+
+```
+⚠️ Code review found issues:
+
+#### Critical (blocks completion)
+- [file:line] — [description]
+
+#### Warning (should fix)
+- [file:line] — [description]
+
+Options:
+1. **Address now** — fix the issues, then re-run review
+2. **Continue** — proceed despite warnings (Critical issues CANNOT be skipped)
+3. **Stop** — halt execution, keep WIP state for manual handling
+```
+
+Wait for user response:
+- **Address now**: Launch a repair agent to fix the review issues. After fixes, re-run the code-reviewer once. If still BLOCK after this second review, STOP and report: "Code review issues persist after repair. Address manually and re-run `/refactor`."
+- **Continue**: Only allowed if there are no Critical issues (warnings only). Proceed to Phase 7 with warnings noted.
+- **Stop**: Keep WIP marker and commits. Report state for manual handling.
 
 ## PHASE 7: Test Assessment
+
+Update `.claude/wip.md` — change Phase to `7 (Test Assessment)`.
 
 Launch the **qa-engineer** agent to assess test impact.
 
@@ -386,6 +395,8 @@ git add [test files you modified] && git commit -m "[WIP] Refactor: [short descr
 ```
 
 ## PHASE 7.5: Documentation Update (MANDATORY)
+
+Update `.claude/wip.md` — change Phase to `7.5 (Documentation)`.
 
 Always invoke the tech-writer — let it decide whether documentation changes are needed.
 
@@ -433,6 +444,8 @@ git add docs/ [source files with doc changes] && git commit -m "[WIP] Refactor: 
 Report the tech-writer's decision in Phase 8.3's report as: `**Documentation**: [Updated docs/architecture.md / No doc update needed — [justification]]`.
 
 ## PHASE 8: Report & Clean Up
+
+Update `.claude/wip.md` — change Phase to `8 (Report & Clean Up)`.
 
 ### 8.1: Final Commit
 

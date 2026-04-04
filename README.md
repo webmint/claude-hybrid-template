@@ -6,9 +6,9 @@ Install it into any project — existing or greenfield — and get a full AI dev
 
 ## Philosophy
 
-Your workflow's **hard gates, specialized agents, and automated hooks** as the foundation. Spec-kit's **structured intake** (research → clarify → specify → plan → tasks) layered on top for scoping quality.
+Your workflow's **hard gates, specialized agents, and automated hooks** as the foundation. Spec-kit's **structured intake** (research → specify → plan → tasks) layered on top for scoping quality.
 
-Every phase transition requires explicit user approval. No step can be skipped.
+Every phase transition requires explicit user approval. Optional steps (research, onboard) can be skipped when not needed.
 
 ## Installation
 
@@ -34,12 +34,9 @@ The wizard will:
 
 ### MCP Servers
 
-The template includes two pre-configured MCP servers in `.mcp.json`:
+**Context7** — Fetches up-to-date documentation for libraries and frameworks directly into context. Powered by `@upstash/context7-mcp`. Pre-configured in `.mcp.json` for all projects. No setup required — runs via `npx`.
 
-- **Context7** — Fetches up-to-date documentation for libraries and frameworks directly into context. Powered by `@upstash/context7-mcp`. No setup required — runs via `npx`.
-- **Chrome DevTools** — Connects to WebStorm's Chrome debugger for screenshots, DOM interaction, and AC verification against the running app. Requires WebStorm JS debugger to be running. The script at `scripts/chrome-devtools-mcp.sh` auto-detects the debugging port. Used by the `runtime-debugger` and `ac-verifier` agents.
-
-Both servers are enabled by default in the settings template. Permissions for their tools (`take_screenshot`, `evaluate_script`, `resolve-library-id`, `get-library-docs`) are pre-allowed.
+**Chrome DevTools** (conditional) — Connects to Chrome/Chromium debugger for screenshots, DOM interaction, and AC verification against the running app. Only added to `.mcp.json` when `/setup-wizard` sets AC verification to "auto" or "browser-only" (frontend/fullstack projects). The script at `scripts/chrome-devtools-mcp.sh` auto-detects the debugging port across JetBrains IDEs, Chrome, and manual launches (macOS, Linux, WSL). Set `CHROME_DEBUG_PORT` env var to override detection.
 
 ## Updating Projects
 
@@ -82,68 +79,49 @@ Requires `jq` for JSON merging and `perl` for placeholder substitution (both pre
 
 ## Workflow
 
-```
-/setup-wizard → /constitute → /onboard → /research → /clarify → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
-   (once)         (once)       (once)    (optional)  (optional)  (per feat)                      (per task/batch)  (per feat)  (auto)
+### One-Time Setup
 
-/fix "bug description"        ← lightweight shortcut for small bugs (skips spec/plan/breakdown)
-/fix bugs/003-null-check.md  ← fix a reported bug from the backlog
-/report-bug "description"    ← log a bug for later fixing
-/refactor path/to/file.ts    ← focused code restructuring without behavior changes
-/refresh-docs                ← update stale documentation (git delta, not full scan)
+Run these once when you first install the template:
+
+```
+/setup-wizard → /constitute → /onboard
 ```
 
-### Phase 0: `/setup-wizard` (one-time)
-Interactive wizard that adapts the template to your project. Auto-detects stack for existing codebases, interviews you for greenfield projects. Generates all config files.
+- **`/setup-wizard`** — Interactive wizard. Auto-detects stack for existing codebases, interviews for greenfield. Generates CLAUDE.md, agents, settings, memory, constitution stub. Detects DEFAULT_BRANCH. Conditionally adds Chrome MCP for frontend projects.
+- **`/constitute`** — Deep codebase analysis (existing) or preference-based interview (greenfield). Produces `constitution.md` — non-negotiable rules, architecture decisions, patterns.
+- **`/onboard`** — (Existing projects only) Deep scan that generates comprehensive `docs/` via tech-writer agent. The knowledge base for all agents. Skip for greenfield (docs built incrementally).
 
-### Phase 1: `/constitute` (one-time)
-Deep codebase analysis (existing projects) or preference-based interview (greenfield) that produces `constitution.md` — non-negotiable rules, architecture decisions, patterns. Persists across sessions.
+### Feature Development (repeat per feature)
 
-### Phase 1.5: `/onboard` (one-time, existing projects only)
-Deep codebase scan that generates comprehensive documentation in `docs/`. Delegates to the tech-writer agent, which uses subagents for large codebases to stay within context limits. Produces `overview.md`, `architecture.md`, `features/*.md`, and `api/*.md` — the knowledge base consumed by `/specify` and flowed to agents through the spec → plan → breakdown → task chain. Skip for greenfield projects (docs are built incrementally).
+```
+/specify → /plan → /breakdown → /execute-task (×N) → /verify → /summarize
+  ↑ approve    ↑ approve    ↑ approve      per task        per feature    auto
+```
 
-### Phase 1.75: `/research "topic or idea"` (optional, per idea)
-Quick feasibility check for vague ideas. Investigates the codebase for related patterns, optionally researches external approaches (signal-based — only when the idea involves new libraries, integrations, or unfamiliar tech), and displays the full research report in the console. You're then asked whether to save — if yes, saves to `research/YYYY-MM-DD-[topic-slug].md`. Does NOT create specs, modify code, or create branches. Use before `/specify` when you're unsure whether an idea is viable or how it fits the project's architecture.
+- **`/specify "feature description"`** — Structured specification with acceptance criteria. Asks clarifying questions as needed (rounds of up to 5, prioritized by impact — no artificial limit). **Requires approval.** Auto-creates `spec/NNN-short-desc` branch.
+- **`/plan`** — Technical plan: architecture, data model, API contracts, research. Signal-based research (Context7 first for libraries, WebSearch for comparisons) — only triggers for things NOT already in the project. Cross-references plan against spec ACs before presenting. **Requires approval.**
+- **`/breakdown`** — Ordered atomic tasks with dependencies, agent assignments (via shared `_agent-assignment.md`), and cross-task contracts (Expects/Produces). Review checkpoints at convergence points. **Requires approval.**
+- **`/execute-task`** — 6-phase per-task workflow: load context → pre-flight (contracts) → execute (agent + verify + code review) → complete → bookkeeping. Code review findings reported to user per task. WIP commits accumulate — squashed by `/verify`.
+  - `/execute-task` — next pending | `/execute-task 3` — specific | `/execute-task 1-5` — range | `/execute-task all` — all pending
+- **`/verify`** — AC verification + cross-task integration check + feature docs (tech-writer) + security + performance review. Feature squash via `git merge-base`. Issues reported with batch bug filing. Auto-triggers `/summarize` on APPROVED.
+- **`/summarize`** — PR-ready feature summary. Runs automatically after `/verify` approves.
 
-### Phase 2: `/clarify "feature description"` (optional, per feature)
-Scans requirements against 9 ambiguity categories, asks up to 5 multiple-choice questions with recommendations. Saves to `specs/[feature]/clarifications.md`. Skip if requirements are already clear.
+### Standalone Commands (use anytime)
 
-### Phase 3: `/specify "feature description"` (per feature)
-Produces a structured specification with acceptance criteria, scope boundaries, and risk assessment. Saves to `specs/[feature]/spec.md`. **Requires approval.** When invoked on the default branch, auto-creates a `spec/NNN-short-desc` branch (incremental numbering, 2-3 word description from the feature name). Skips if already on a `spec/*` branch.
+```
+/fix "bug description"         ← small bugs (1-5 files)
+/fix bugs/003-null-check.md   ← fix from bug backlog
+/refactor path/to/file.ts     ← behavior-preserving restructuring
+/report-bug "description"     ← log a bug for later
+/refresh-docs                  ← update stale documentation
+/research "topic or idea"      ← quick feasibility check
+```
 
-### Phase 4: `/plan` (per feature)
-Takes an approved spec and produces a technical plan: architecture decisions, data model, API contracts, research findings. Codebase research always runs; deep web research is signal-based — only triggered when the spec references external libraries, third-party integrations, architectural forks, or unfamiliar technology. Saves to `specs/[feature]/plan.md`. **Requires approval.**
-
-### Phase 5: `/breakdown` (per feature)
-Takes an approved plan and generates ordered, atomic tasks with dependencies and agent assignments. Each task includes cross-task contracts (Expects/Produces) that are verified during execution to prevent silent error compounding. Review checkpoints are auto-placed at convergence points and layer boundaries. Saves to `specs/[feature]/tasks/`. **Requires approval.**
-
-### Phase 6: `/execute-task` (per task or batch)
-Picks up a task (or multiple tasks), reads task-referenced docs (if any), selects the assigned agent, executes with scope constraints, and verifies (tsc, lint, build, done conditions, contract postconditions, affected tests). Contract preconditions are checked before execution — if a prior task's output doesn't match expectations, execution stops with upstream tracing. If verification fails, a self-repair agent automatically fixes errors (up to 3 attempts). At review checkpoints, user reviews preceding work before continuing. Then the tech-writer agent updates `docs/`.
-
-Supports multiple execution modes:
-- `/execute-task` — next pending task
-- `/execute-task 3` — specific task
-- `/execute-task 1,3,5` — specific tasks sequentially
-- `/execute-task 1-5` — range of tasks
-- `/execute-task all` — all pending tasks in feature
-
-### Phase 7: `/verify` (per feature)
-Code review against the spec's acceptance criteria, cross-referenced with constitution rules. When AC verification is enabled, launches the `ac-verifier` agent to test criteria against the running app via Chrome MCP and/or API calls — falls back to code reading when MCP is unavailable. Updates persistent memory with lessons learned. Phase 10 (Issue Triage) lets you decide per-issue: fix now (chains into `/fix`), report for later (creates a bug file in `bugs/`), or skip. Automatically triggers `/summarize` when verdict is APPROVED.
-
-### Phase 8: `/summarize` (per feature, auto)
-Generates a concise, PR-ready summary of the completed feature. Reads spec, plan, tasks, and git history to produce a structured overview of what was built, files changed, key decisions, and acceptance criteria. Saves to `specs/[feature]/summary.md`. Runs automatically after `/verify` approves — no manual invocation needed.
-
-### `/fix "bug description"` (standalone, for small bugs)
-Lightweight bug-fixing workflow that bypasses the full spec→plan→breakdown pipeline. Designed for small, localized bugs (1-5 files). Also accepts bug file paths: `/fix bugs/003-null-check.md` — reads the file, extracts description and file(s), and updates the bug's status to Fixed after completion. Phases: diagnose (with **runtime-debugger** agent for runtime errors), apply minimal fix, verify (tsc + lint + build + self-repair loop), code review (**code-reviewer** agent), test assessment (**qa-engineer** agent). Includes crash recovery, constitution enforcement, and memory updates. If the bug turns out to be larger than expected, recommends escalating to `/specify`.
-
-### `/report-bug "description"` (standalone, for logging bugs)
-Creates a structured bug report file in `bugs/` for later fixing. Accepts an optional `--file` flag to link the bug to a specific file and `--severity` flag (Critical/Warning/Info, defaults to Warning). Bug files follow sequential numbering (`001-short-description.md`) with a status lifecycle (Open → In Progress → Fixed). Fix a reported bug with `/fix bugs/NNN-xxx.md` or escalate larger ones with `/specify`.
-
-### `/refactor path/to/file.ts "goal"` (standalone, for code restructuring)
-Focused refactoring workflow for behavior-preserving code restructuring (1-5 files). Supports IDE-injected context (active file/selection from WebStorm) or manual file path with optional line range. Phases: analyze code against 9 refactoring categories (long functions, deep nesting, SOLID/DRY violations, type safety, naming, dead code, pattern mismatches, complexity), present detailed proposal with before/after for each opportunity (hard gate — partial approval supported), apply refactoring with auto-selected agent (**architect**, **frontend-engineer**, or **backend-engineer** based on file layer), verify (tsc + lint + build + tests + self-repair loop), code review (**code-reviewer** agent), test assessment (**qa-engineer** agent — tests must pass unchanged since refactoring is behavior-preserving), mandatory documentation update (tech-writer agent evaluates whether docs are needed). If the refactoring grows beyond 5 files, recommends escalating to `/specify`.
-
-### `/refresh-docs` (standalone, for stale documentation)
-Lightweight documentation refresh that detects what source files changed since docs were last updated and invokes the tech-writer on just those files. Uses git delta detection — sits between `/onboard` (full codebase scan) and Phase 5 of `/execute-task` (single task). Supports `--since <commit>`, `--module <name>`, and `--all` (delegates to `/onboard`). Captures both committed and uncommitted changes. Includes verification (tsc + lint) and memory update.
+- **`/fix`** — Diagnose → delegate to agent → verify → code review → test assessment → doc update. Accepts enriched bug files with AC/expected/actual behavior context. Self-contained (own squash, own docs). Escalates to `/specify` if scope > 5 files.
+- **`/refactor`** — Analyze 9 categories → propose (partial approval supported) → delegate to agent → verify → code review → test assessment → doc update. Auto-selects agent by file layer. Self-contained. Escalates to `/specify` if scope > 5 files.
+- **`/report-bug`** — Creates structured bug file in `bugs/` with status lifecycle (Open → In Progress → Fixed).
+- **`/refresh-docs`** — Lightweight doc update using git delta. Tech-writer in Refresh Mode.
+- **`/research`** — Investigates codebase + docs/ for related patterns. Signal-based external research (Context7 first). Displays report in console, optionally saves to `research/`.
 
 ## Artifact Storage
 
@@ -154,7 +132,6 @@ research/
 specs/
   001-user-auth/                 # Numbered feature directories
     spec.md                      # /specify output
-    clarifications.md            # /clarify output (optional)
     plan.md                      # /plan output
     research.md                  # /plan research (optional)
     data-model.md                # /plan entities (optional)
@@ -203,7 +180,6 @@ bugs/
 - **Review checkpoint gates**: Auto-placed at dependency convergence points and layer boundaries. User reviews preceding work before continuing in batch mode
 - **Commit convention**: All commits follow Conventional Commits format. AI co-author attribution is off by default — no `Co-Authored-By` trailers, no AI mentions in commit messages. Opt-in during `/setup-wizard`. All workflow commits use scoped `git add` (specific files only, never `git add -A`)
 - **Pre-squash safety check**: Before squashing WIP commits, workflows verify no commits were pushed to the remote — skips squash if history was already shared
-- **9-category ambiguity scan**: Catches requirement gaps before implementation
 - **Auto-compact**: In batch execution, pauses and prompts user-initiated compaction at heavy context load to prevent degradation
 
 ## Pre-Populated Universal Rules
@@ -267,7 +243,7 @@ After running `/setup-wizard`:
 - `CLAUDE.md` — Adjust workflow steps
 - `constitution.md` — Add project-specific rules
 - `.claude/settings.json` — Modify hooks and plugins
-- `docs/` — Project documentation, updated automatically by tech-writer agent after each task (along with inline JSDoc/docstrings in source files)
+- `docs/` — Project documentation. Implementing agents write inline docs (JSDoc/docstrings) per task; tech-writer generates feature-level docs at `/verify` time
 
 ## Template Files
 

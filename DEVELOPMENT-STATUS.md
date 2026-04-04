@@ -2,33 +2,33 @@
 
 ## What This Is
 
-A reusable spec-driven development template for Claude Code. Combines a structured intake flow (research → clarify → specify → plan → breakdown → execute → verify → summarize) with enforced quality gates, specialized agents, and automated hooks.
+A reusable spec-driven development template for Claude Code. Combines a structured intake flow (research → specify → plan → breakdown → execute → verify → summarize) with enforced quality gates, specialized agents, and automated hooks.
 
 ## What's Built
 
-### Commands (17 commands + 4 shared partials in `.claude/commands/`)
-- `setup-wizard.md` — Interactive project setup, auto-detects stack or interviews for greenfield; saves baselines for three-way merge on first run
+### Commands (16 commands + 5 shared partials in `.claude/commands/`)
+- `setup-wizard.md` — Interactive project setup, auto-detects stack or interviews for greenfield; saves baselines for three-way merge on first run; detects DEFAULT_BRANCH; conditionally adds Chrome MCP based on AC_VERIFICATION setting
 - `constitute.md` — Generates constitution from codebase analysis (existing) or interview (greenfield)
 - `onboard.md` — Deep codebase scan for existing projects, generates comprehensive `docs/` via tech-writer agent
-- `research.md` — Quick feasibility check for vague ideas; investigates codebase for related patterns, signal-based external research, displays full report in console and optionally saves to `research/YYYY-MM-DD-[topic-slug].md`
-- `clarify.md` — Optional pre-step, 9 ambiguity categories, max 5 questions
-- `specify.md` — Creates feature specs with acceptance criteria; auto-creates `spec/NNN-short-desc` branch when on default branch
-- `plan.md` — Technical plan between spec and breakdown (architecture, data model, contracts); signal-based research evaluation; inherits docs context from spec; outputs Documentation Impact section
-- `breakdown.md` — Splits plan into sequential atomic tasks in individual files; generates cross-task contracts (Expects/Produces) and auto-places review checkpoints
-- `execute-task.md` — Runs a single task with pre-flight checks (including contract preconditions), agent execution, doc writing (with structured prompt + post-doc verification), verification (including contract postconditions + affected tests); review checkpoint gates in batch mode
-- `verify.md` — Validates all tasks against spec acceptance criteria; Phase 10 triage lets user fix issues now, fix docs now (direct tech-writer), or defer to `bugs/`; auto-triggers `/summarize` on APPROVED verdict
-- `summarize.md` — Generates concise, PR-ready feature summary from spec, plan, tasks, and git history; saves to `specs/[feature]/summary.md`; runs automatically after `/verify` approves
-- `fix.md` — Lightweight bug-fix workflow: diagnose → fix → review → test → doc update (mandatory), with runtime-debugger, code-reviewer, and qa-engineer agents; accepts bug file paths from `bugs/`
+- `research.md` — Quick feasibility check for vague ideas; investigates codebase and docs/ for related patterns, signal-based external research (Context7 first for libraries, WebSearch for comparisons), displays full report in console and optionally saves to `research/YYYY-MM-DD-[topic-slug].md`
+- `specify.md` — Creates feature specs with acceptance criteria; clarifies requirements in rounds of up to 5 questions (no artificial limit); auto-creates `spec/NNN-short-desc` branch when on default branch
+- `plan.md` — Technical plan between spec and breakdown (architecture, data model, contracts); signal-based research with tightened triggers (not-in-project qualifier); Context7 first for library docs; Phase 2.5 cross-references plan against spec ACs before presenting to user
+- `breakdown.md` — Splits plan into sequential atomic tasks in individual files; generates cross-task contracts (Expects/Produces) and auto-places review checkpoints; references shared `_agent-assignment.md` for agent selection
+- `execute-task.md` — 6-phase workflow: load context → pre-flight (contracts) → execute (agent → verify → code review) → complete & report → bookkeeping (memory + context + multi-task). Per-task code review reports findings to user. No per-task squash — WIP commits deferred to /verify
+- `verify.md` — Validates all tasks against spec acceptance criteria; cross-task integration check (not full code review — done per-task); feature-level docs via tech-writer; all-mode feature squash using `git merge-base`; Phase 10 presents issues with batch bug filing — does not invoke /fix
+- `summarize.md` — Generates concise, PR-ready feature summary from spec, plan, tasks, and git history; reads DEFAULT_BRANCH from config; wrapper mode source repo handling
+- `fix.md` — Lightweight bug-fix workflow: diagnose → delegate to agent → verify → code review → test → doc update, with runtime-debugger, code-reviewer, qa-engineer, and tech-writer agents; accepts enriched bug file paths from `bugs/`; agent selection via shared `_agent-assignment.md`
 - `report-bug.md` — Creates structured bug report files in `bugs/` for later fixing via `/fix` or `/specify`
-- `refactor.md` — Focused refactoring workflow: analyze → propose → approve → apply → review → doc update (mandatory), with auto-selected agent (architect/frontend-engineer/backend-engineer), code-reviewer, and qa-engineer agents
+- `refactor.md` — Focused refactoring workflow: analyze → propose → approve → delegate to agent → verify → code review → test → doc update, with auto-selected agent via `_agent-assignment.md`, code-reviewer, qa-engineer, and tech-writer agents
 - `refresh-docs.md` — Lightweight documentation refresh using git delta; invokes tech-writer in Refresh Mode on changed files only
 - `release.md` — Meta-command for the template repo itself: automates version bump, changelog, and documentation updates after making changes
 
 Shared partials (`_`-prefixed, loaded on-demand by parent commands):
-- `_recovery.md` — Phase 0 crash recovery logic shared by execute-task, fix, and refactor
-- `_context-maintenance.md` — Phase 7.5 session state and context health (execute-task)
-- `_multi-task-continuation.md` — Phase 8 batch queue management (execute-task multi-task mode)
+- `_recovery.md` — Phase 0 crash recovery with deterministic hash-based rollback, shared by execute-task, fix, and refactor
+- `_context-maintenance.md` — Phase 5.2 session state and context health (execute-task)
+- `_multi-task-continuation.md` — Phase 5.3 batch queue management (execute-task multi-task mode)
 - `_tech-writer-onboarding.md` — Full onboarding scan instructions Section A (onboard)
+- `_agent-assignment.md` — Shared file-layer→agent mapping table, referenced by breakdown, fix, and refactor
 
 ### Agent Templates (16 files in `.claude/templates/agents/`)
 Always included: `code-reviewer`, `qa-engineer`, `runtime-debugger`, `tech-writer`
@@ -78,7 +78,7 @@ Setup wizard decides which agents to generate based on detected stack and user p
 4. **Sequential numbering** — features: 001, 002...; tasks within feature: 001, 002...
 5. **All agents as templates, wizard selects** — 14 templates, setup wizard conditionally generates based on project
 6. **Universal constitution rules pre-populated** — SOLID, DRY, KISS, error handling, code quality, workflow rules all built-in; `/constitute` preserves these `[universal]` sections verbatim and only populates `[project-specific]` sections
-7. **Mandatory documentation** — tech-writer agent runs after every task, `/fix`, and `/refactor` (all with structured 2-part prompt: agent file + task context, explicit document/skip criteria, post-doc verification); `/refresh-docs` catches stale docs via git delta; `/plan` declares documentation impact upfront
+7. **Two-layer documentation** — implementing agents write inline docs (JSDoc/docstrings) as part of code; code-reviewer verifies inline docs per-task; tech-writer generates feature-level docs in `docs/` at `/verify` time (once per feature, not per task). `/fix` and `/refactor` run tech-writer per-command (standalone, no /verify follows). `/refresh-docs` catches stale docs via git delta
 8. **Greenfield support** — all commands work for empty/new projects
 9. **Check before build** — must search codebase for existing utilities before creating new ones
 10. **Onboarding for existing projects** — `/onboard` generates comprehensive docs as the knowledge base for all agents
@@ -87,7 +87,10 @@ Setup wizard decides which agents to generate based on detected stack and user p
 13. **Configurable AI attribution** — commits default to no Claude/AI mention; opt-in via setup wizard. Rule stored in CLAUDE.md and enforced by all commit-creating commands
 14. **Tiered agent models** — agents use 3 model tiers: Think (opus — architect, api-designer, security-reviewer), Do (sonnet — implementation agents), Verify (sonnet — review/test agents). Configurable via setup wizard (`MODEL_THINK`, `MODEL_DO`, `MODEL_VERIFY` in project-config.json)
 15. **Three-way merge for updates** — `update.sh` uses `git merge-file` with baselines to apply only template diffs, preserving all project customizations (wizard-added items, custom sections, manual edits)
-16. **AC verification is opt-in and project-conditional** — setup wizard asks if AC should be verified via browser (Chrome MCP), API calls, or code reading. Work-initiating commands probe MCP availability at startup (non-blocking warning). `/verify` Phase 2 launches the ac-verifier agent when enabled, with graceful fallback to code reading
+16. **AC verification is opt-in and project-conditional** — setup wizard asks if AC should be verified via browser (Chrome MCP), API calls, or code reading. Chrome MCP only installed for auto/browser-only projects. `/verify` Phase 2 launches the ac-verifier agent when enabled, with graceful fallback to code reading
+17. **Per-task code review, integration check at epic level** — code-reviewer runs after each `/execute-task` task (findings reported to user: address/continue/stop). `/verify` does cross-task integration check only — not full code review. `/fix` and `/refactor` also report review findings to user (consistent across all commands)
+18. **Language-agnostic agent templates** — type safety rules use `{{TYPE_SAFETY_RULES}}` placeholder generated by setup wizard based on detected language. No hardcoded TypeScript-specific items. Agent templates use `Inline docs` not `JSDoc`
+19. **Pipeline vs standalone command lifecycle** — pipeline commands (execute-task) defer squash and feature docs to the pipeline end (/verify). Standalone commands (fix, refactor) are self-contained — handle their own squash, docs, and cleanup. Different lifecycle patterns, both correct for their context
 
 ### Onboarding System (`/onboard`)
 - Runs after `/constitute` for existing projects — uses constitution + CLAUDE.md + memory as input
@@ -103,8 +106,8 @@ Setup wizard decides which agents to generate based on detected stack and user p
 - Enriches memory with module boundaries, dependency warnings, and complexity areas
 - Docs serve as the primary knowledge base, consumed by `/specify` and flowed to agents through the spec → breakdown → task reference chain
 
-### Context Maintenance (Phase 7.5)
-- `/execute-task` now includes Phase 7.5: Context Maintenance after each task
+### Context Maintenance (Phase 5.2)
+- `/execute-task` includes Phase 5.2: Context Maintenance after each task
 - Writes a fixed-size (~40 line) sliding window to `.claude/session-state.md` with current progress, recent decisions, and modified files
 - Three-tier context health check: light (no action), moderate (optional /compact), heavy (strongly recommend /compact)
 - Session state is gitignored — it's a runtime artifact, not project state
@@ -113,7 +116,7 @@ Setup wizard decides which agents to generate based on detected stack and user p
 ### Crash Recovery (Phase 0 + WIP Checkpoints)
 - `/execute-task`, `/fix`, and `/refactor` create a WIP marker (`.claude/wip.md`) and git checkpoint commits during execution
 - Phase 0: Recovery Check (shared via `_recovery.md`) detects interrupted sessions and offers 4 options: resume, rollback+retry, rollback+skip, keep manual. WIP markers include a `Command` field (execute-task/fix/refactor) to prevent cross-command recovery confusion
-- Git `[WIP]` commits preserve partial work at each phase; squashed into a clean commit on completion (with pre-squash safety check — skips squash if commits were already pushed to remote; preserves wip.md if squash commit fails)
+- Git `[WIP]` commits preserve partial work at each phase. For execute-task: WIP commits accumulate across tasks and are squashed by `/verify` Phase 9.5 using `git merge-base`. For fix/refactor: squashed per-command (with pre-squash safety check — skips if commits already pushed)
 - All workflow commits use scoped `git add` (specific files only, never `git add -A`) to prevent accidentally committing secrets or unwanted files
 - `wip.md` is gitignored — only exists during active task execution
 - In wrapper mode, WIP marker includes `## Source Repo Checkpoint` section; Phase 0 recovery also rolls back source repo WIP commits
@@ -126,5 +129,7 @@ Setup wizard decides which agents to generate based on detected stack and user p
 - Consider a `/status` command to show current feature progress
 - The setup wizard could detect more frameworks/tools
 - ~~Agent templates use `{{PLACEHOLDER}}` variables — wizard must replace all of them~~ **FIXED: `update.sh` now applies placeholder substitution using `.claude/project-config.json`**
-- `constitution.md` stub generation (step 3.5 in wizard) — template content TBD
+- ~~`constitution.md` stub generation (step 3.5 in wizard) — template content TBD~~ **FIXED: wizard copies template with resolved headers, preserves sentinel strings**
+- ~~`/clarify` command overlap with `/specify`~~ **RESOLVED: `/clarify` removed, clarification absorbed into `/specify` Phase 2**
+- Consider spec validation agents (R1 from competitive analysis) — plan-spec cross-reference already added, spec validation is lower priority with per-task code review as safety net
 - ~~Consider if tech-writer should also update inline code docs (JSDoc/docstrings) or just `docs/` folder~~ **DECIDED: both. Tech-writer updates inline docs (JSDoc/docstrings) AND `docs/` folder.**

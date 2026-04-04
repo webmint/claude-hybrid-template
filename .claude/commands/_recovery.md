@@ -62,14 +62,23 @@ Wait for user to choose.
 ## 0.4: Execute Choice
 
 **If Resume:**
-- Run the Type Check Command from CLAUDE.md, the Lint Command, and the build command (if specified) on all files listed in the WIP marker
-- If they pass, jump to the phase AFTER the interrupted phase
-- If they fail, inform the user — the code is in a broken state. Recommend option 2 (rollback and retry).
+
+First, check the Phase field in wip.md to determine where execution was interrupted:
+
+- **Phase 4 (Complete)** — for `execute-task`: the task was verified, reviewed, and marked complete. Code is committed. Delete wip.md and continue to Phase 5 (bookkeeping).
+- **Phase 8 (squash-related)** — for `fix` and `refactor`: check whether the squash already happened. If wip.md says "Squash Applied", retry the commit only. If squash hasn't happened, run the squash from the start.
+
+- **All other phases (3, 4, etc.):**
+  - Run the Type Check Command from CLAUDE.md, the Lint Command, and the build command (if specified) on all files listed in the WIP marker
+  - If they pass, jump to the phase AFTER the interrupted phase
+  - If they fail, inform the user — the code is in a broken state. Recommend option 2 (rollback and retry).
 
 **If Rollback and retry:**
 - `git stash` any uncommitted changes (save them just in case)
-- `git reset --hard` to the commit before the first `[WIP]` commit (find via `git log --oneline | grep -v "\[WIP\]" | head -1`)
-- **Source repo rollback** (if `$SOURCE_CHECKPOINT` exists in wip.md): `git -C $SOURCE_ROOT reset --hard $SOURCE_CHECKPOINT`
+- Read the `## Rollback Point → Commit:` field from wip.md to get the checkpoint hash
+- Validate the hash: `git cat-file -t [hash]`. If valid, proceed. If invalid or missing, STOP and inform the user: "Rollback point hash in wip.md is missing or invalid. Use `git log --oneline` to find the checkpoint commit manually, then run `git reset --hard [hash]`."
+- `git reset --hard [checkpoint-hash-from-wip.md]`
+- **Source repo rollback** (if `## Source Repo Checkpoint → Commit:` exists in wip.md and is not `N/A`): Validate with `git -C $SOURCE_ROOT cat-file -t [hash]`, then `git -C $SOURCE_ROOT reset --hard [source-checkpoint-hash]`
 - Delete `.claude/wip.md`
 - Re-run the calling command from PHASE 1:
   - `execute-task`: re-run `/execute-task [same task number]`
@@ -77,7 +86,7 @@ Wait for user to choose.
   - `refactor`: re-run `/refactor [same arguments]`
 
 **If Rollback and skip/abandon:**
-- Same git reset as above (including source repo rollback if applicable)
+- Same git reset as above — read checkpoint hash from wip.md, validate, then reset (including source repo rollback if applicable)
 - **execute-task only**: Update the task file — set status back to `Pending`. Inform user the task is pending.
 - **fix/refactor**: Inform user the state is cleared and they can handle it manually.
 - Delete `.claude/wip.md`

@@ -36,11 +36,11 @@ You are methodical, precise, and relentless. You never guess — you observe, tr
 #### Step B: Analyze Root Cause
 Common patterns to check:
 
-**Null/Undefined errors:**
-- Arrays with null elements passed to `.map()`, `.forEach()`, `.reduce()`
-- Fix: Add `.filter(Boolean)` or type-narrowing filter before `.map()`
-- Deeply nested optional properties without optional chaining (`?.`)
-- Variables that could be undefined used without null checks
+**Null/Optional value errors:**
+- Collections with null elements passed to iteration methods
+- Fix: Add filtering or type-narrowing before iteration
+- Deeply nested optional properties accessed without null-safety mechanisms
+- Variables that could be null/undefined/nil used without proper checks
 
 **API contract mismatches:**
 - Fields the backend requires vs. what the frontend sends
@@ -62,7 +62,7 @@ Common patterns to check:
 - Make the smallest possible change that fixes the root cause
 - Do NOT refactor surrounding code — fix only the error
 - Follow project patterns (check `constitution.md`)
-- Proper typing (no `any` unless absolutely necessary)
+- Proper typing — avoid escape-hatch types, use the language's type safety mechanisms
 
 #### Step D: Verify
 - Wait for hot-reload: `sleep 3` via Bash

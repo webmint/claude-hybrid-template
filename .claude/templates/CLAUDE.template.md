@@ -38,18 +38,15 @@ This file provides guidance to Claude Code when working with code in this reposi
 ### Spec-Driven Development Flow
 
 ```
-/setup-wizard → /constitute → /onboard → /research → /clarify → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
-   (once)         (once)       (once)    (optional)  (optional)  (per feat)  (per feat) (per feat)   (per task)    (per feat)  (auto)
+/setup-wizard → /constitute → /onboard → /research → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
+   (once)         (once)       (once)    (optional)  (per feat)  (per feat) (per feat)   (per task)    (per feat)  (auto)
 ```
 
 ### `/research "topic or idea"` (optional)
 Quick feasibility check for vague ideas. Investigates the codebase for related patterns, optionally researches external approaches (signal-based), and displays the full report in the console. You're then asked whether to save — if yes, saves to `research/YYYY-MM-DD-[topic-slug].md`. Does NOT create specs or modify code. Use before `/specify` when you're unsure whether an idea is viable or how it fits.
 
-### `/clarify "feature description"` (optional)
-Scans requirements against 9 ambiguity categories, asks up to 5 multiple-choice questions. Saves decisions to `specs/[feature]/clarifications.md`. Use when requirements are vague.
-
 ### `/specify "feature description"`
-Creates a structured specification with acceptance criteria. Analyzes affected code, saves spec to `specs/[feature]/spec.md`. **Requires approval before proceeding.** Auto-creates a `spec/NNN-short-desc` branch when on the default branch.
+Creates a structured specification with acceptance criteria. Asks clarifying questions as needed (no artificial limit — the AI judges how many based on input clarity). Analyzes affected code, saves spec to `specs/[feature]/spec.md`. **Requires approval before proceeding.** Auto-creates a `spec/NNN-short-desc` branch when on the default branch.
 
 ### `/plan [spec-file]`
 Takes an approved spec and produces a technical plan: architecture decisions, data model, API contracts, research. Saves to `specs/[feature]/plan.md`. **Requires approval before breakdown.**
@@ -60,13 +57,14 @@ Takes an approved plan and generates ordered, atomic tasks with dependencies and
 ### `/execute-task [number]`
 Executes a single task from the breakdown using the assigned specialized agent. Follows enforced workflow:
 1. Pre-flight check (constitution, memory, file state, contract preconditions)
-2. Agent execution with scope constraints
-3. Post-execution verification (tsc, lint, build, done conditions)
-4. Documentation update (tech-writer agent)
+2. Agent execution with scope constraints (agent writes code + inline docs)
+3. Post-execution verification (tsc, lint, build, done conditions, self-repair)
+4. Code review (code-reviewer agent — findings reported to user, critical issues block)
 5. Memory update
+WIP commits accumulate across tasks and are squashed by `/verify` when the feature is approved.
 
 ### `/verify [spec-file]`
-Verifies all completed tasks against the spec's acceptance criteria. When AC verification is enabled (`AC_VERIFICATION` in project-config.json), launches the **ac-verifier** agent to test acceptance criteria against the running app via Chrome DevTools MCP and/or API calls — falls back to code reading when MCP is not available. Performs code review against constitution rules. Updates memory with lessons learned. Automatically triggers `/summarize` when verdict is APPROVED.
+Verifies all completed tasks against the spec's acceptance criteria. When AC verification is enabled (`AC_VERIFICATION` in project-config.json), launches the **ac-verifier** agent to test acceptance criteria against the running app via Chrome DevTools MCP and/or API calls — falls back to code reading when MCP is not available. Performs cross-task integration check (not full code review — that was done per-task). Generates feature-level documentation via tech-writer. Squashes all WIP commits into a clean feature commit. Updates memory with lessons learned. Automatically triggers `/summarize` when verdict is APPROVED.
 
 ### `/summarize [spec-file]`
 Generates a concise, PR-ready summary of a completed feature. Reads spec, plan, tasks, and git history. Saves to `specs/[feature]/summary.md`. Runs automatically after `/verify` approves.
@@ -179,7 +177,6 @@ research/
 specs/
   001-feature-name/            # Numbered feature directories
     spec.md                    # /specify output
-    clarifications.md          # /clarify output (optional)
     plan.md                    # /plan output
     research.md                # /plan research (optional)
     data-model.md              # /plan data model (optional)
@@ -213,13 +210,13 @@ This file is:
 - **Fixed-size** — always fully overwritten, never appended, max ~40 lines
 - **A sliding window** — only tracks the last 3 tasks' modifications and last 3 decisions
 - **Not a history log** — history lives in task completion notes (`specs/`) and `MEMORY.md`
-- **Updated automatically** by `/execute-task` (Phase 7.5)
+- **Updated automatically** by `/execute-task` (Phase 7)
 
 If you run `/clear` or context is compacted, session-state.md ensures the next `/execute-task` can bootstrap without re-discovering state.
 
 ### Crash Recovery
 
-If a task execution is interrupted (power loss, terminal crash, network drop), the next `/execute-task` will detect the interrupted state via `.claude/wip.md` and offer recovery options: resume from where it stopped, rollback and retry, rollback and skip, or keep changes for manual handling. The WIP marker includes a `Command` field identifying which command (`/execute-task`, `/fix`, or `/refactor`) was interrupted — if you run a different command, it will detect the mismatch and ask you to resolve the previous session first. Git checkpoint commits (`[WIP]` prefix) preserve partial work and get squashed into a clean commit on successful completion.
+If a task execution is interrupted (power loss, terminal crash, network drop), the next `/execute-task` will detect the interrupted state via `.claude/wip.md` and offer recovery options: resume from where it stopped, rollback and retry, rollback and skip, or keep changes for manual handling. The WIP marker includes a `Command` field identifying which command (`/execute-task`, `/fix`, or `/refactor`) was interrupted — if you run a different command, it will detect the mismatch and ask you to resolve the previous session first. Git checkpoint commits (`[WIP]` prefix) preserve partial work and are squashed into a clean feature commit by `/verify` when the feature is approved.
 
 ## References
 

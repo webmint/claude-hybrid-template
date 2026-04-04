@@ -13,7 +13,7 @@ Takes an approved spec and produces a technical plan: research findings, data mo
 ## Context in the Workflow
 
 ```
-/clarify (optional) → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
+/research (optional) → /specify → /plan → /breakdown → /execute-task → /verify → /summarize
 ```
 
 `/plan` runs AFTER the spec is approved, BEFORE task breakdown. It answers technical questions the spec intentionally left open (specs describe WHAT, plans describe HOW).
@@ -24,6 +24,8 @@ Takes an approved spec and produces a technical plan: research findings, data mo
 2. If status is still "Draft", stop and inform the user
 
 ## PHASE 0: Research Evaluation
+
+**Guard**: Read `constitution.md`. If it contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/plan`."
 
 **This phase always runs.** Scan the spec to determine the research depth needed.
 
@@ -39,16 +41,16 @@ Takes an approved spec and produces a technical plan: research findings, data mo
 
 ### Step 2: Signal Scan
 
-Read the spec and check for these signals:
+Read the spec and check for these signals. **Only flag signals for things NOT already in the project's current stack.** If the spec references a library/technology that's already in the project's dependencies (check `CLAUDE.md`, `package.json`, `pubspec.yaml`, `requirements.txt`, etc.), that is NOT a signal — the team has already made that choice.
 
-| Signal | Example |
-|--------|---------|
-| External library/package mentioned or implied | "use Stripe SDK", "add PDF export" |
-| New integration with third-party service or API | "connect to payment gateway", "OAuth with Google" |
-| Architectural decision where multiple valid approaches exist | "real-time updates" (polling vs SSE vs WebSocket) |
-| Greenfield pattern not yet present in the codebase | first use of caching, first background job, new auth flow |
-| Performance constraints that need benchmarking | "handle 10k concurrent users", "< 200ms response" |
-| Unfamiliar technology referenced in spec | framework, protocol, or tool the codebase hasn't used before |
+| Signal | Example | NOT a signal when... |
+|--------|---------|---------------------|
+| External library/package **not in project dependencies** | "use Stripe SDK" (and Stripe is not in package.json) | Library is already installed |
+| New integration with **unconfigured** third-party service | "connect to payment gateway" (no payment config exists) | Service is already integrated |
+| Architectural decision where multiple valid approaches exist | "real-time updates" (polling vs SSE vs WebSocket) | Always a signal — requires decision |
+| Greenfield pattern not yet present in the codebase | first use of caching, first background job | Pattern already exists in codebase |
+| Performance constraints that need benchmarking | "handle 10k concurrent users", "< 200ms response" | Always a signal — requires research |
+| Technology **not part of the project's current stack** | new protocol or tool the codebase hasn't used | Technology is already in the stack |
 
 **No signals found** → proceed to Phase 1 with codebase research only.
 
@@ -56,10 +58,18 @@ Read the spec and check for these signals:
 
 ### Step 3: Deep Research (when signals detected)
 
-For each signal identified:
+For each signal, choose the appropriate research tool:
+
+**For specific libraries named in the spec:**
+- Try Context7 first (`resolve-library-id` → `query-docs`) to get current documentation and API details
+- If Context7 has no docs for the library, fall back to WebSearch
+
+**For comparing alternatives or architectural decisions:**
 - Use WebSearch to find current best practices and proven approaches
 - Compare at least 2-3 alternatives with pros/cons
 - Check library options: maintenance status, bundle size, community adoption
+
+**For all signals:**
 - Look at real-world examples of similar implementations
 - Verify external API contracts and limitations
 
@@ -161,9 +171,7 @@ Save to `specs/[feature-name]/plan.md`:
 **Error Handling**: [pattern to use]
 **State Management**: [approach for this feature]
 
-## Constitution Check
-
-**Guard**: If `constitution.md` contains `_Run /constitute to populate_`, stop: "⛔ constitution.md has not been populated yet. Run `/constitute` before using `/plan`."
+## Constitution Compliance
 
 [Verify the planned approach doesn't violate any NON-NEGOTIABLE rules]
 - Rule X: [compliant / requires attention]
@@ -220,6 +228,19 @@ Save to `specs/[feature-name]/plan.md`:
 - [Data Model](data-model.md) — if data entities are involved
 - [Contracts](contracts.md) — if API changes are involved
 ```
+
+## PHASE 2.5: Plan-Spec Cross-Reference Check
+
+Before presenting the plan to the user, verify completeness:
+
+1. Read every AC from the spec's Acceptance Criteria section
+2. For each AC, verify the plan addresses it:
+   - Check the plan's "Layer Map" and "File Impact" for files/components related to this AC
+   - Check "Key Design Decisions" for approach decisions relevant to this AC
+3. If any AC has no clear implementation path in the plan:
+   - Revise the plan to add the missing coverage
+   - If you cannot determine the implementation path, add it to the plan's Risk Assessment as: "AC-[N] has no clear implementation path — requires clarification during breakdown"
+4. Check the reverse: does the plan's File Impact list files NOT in the spec's Affected Areas? If yes, note them as additions discovered during planning (add to the plan's File Impact table with a note).
 
 ## PHASE 3: User Approval
 

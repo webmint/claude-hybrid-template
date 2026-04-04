@@ -5,6 +5,58 @@ All notable changes to this template will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.25.0] - 2026-04-04
+
+### Added
+- **Per-task code review**: `/execute-task` Phase 3.3 launches code-reviewer agent after each task. Findings reported to user with options (address now / continue / stop). Critical issues block completion. Issues caught at Task 2, not Task 10
+- **Shared agent assignment** (`_agent-assignment.md`): Single source of truth for file-layer→agent mapping, referenced by `/breakdown`, `/fix`, and `/refactor`
+- **Plan-spec cross-reference check**: `/plan` Phase 2.5 verifies every spec AC has an implementation path before presenting to user. Gaps auto-fixed or flagged as risks
+- **`{{TYPE_SAFETY_RULES}}` placeholder**: Agent templates now language-agnostic. Setup wizard generates type safety rules based on detected language instead of hardcoded TypeScript items
+- **`DEFAULT_BRANCH` config key**: Detected once at setup (cascade: origin/HEAD → main → master → develop). Used by `/summarize` and `/verify` squash — no hardcoded `main`
+- **Enriched bug file format**: Feature, AC, Expected/Actual Behavior, Related Issues fields. Bug files are self-contained work orders for fresh `/fix` sessions
+- **Failure-count guidance** in `/verify` Phase 10: 1-3 issues → fix in session, 4-6 → compact between fixes, 7+ → consider re-executing tasks
+- **Cross-platform Chrome DevTools script**: Supports macOS + Linux + WSL, JetBrains + Chrome/Chromium paths, `CHROME_DEBUG_PORT` env var override, port 9222 fallback
+- **Conditional Chrome MCP**: Only installed for projects with `AC_VERIFICATION` set to "auto" or "browser-only". Non-frontend projects get clean `.mcp.json`
+- **Prior task completion notes**: `/execute-task` Phase 1.2 reads completion notes from earlier tasks for context continuity across sessions
+- **`templateRepoOnly` section** in manifest: Formally documents files excluded from installation (release.md, install.sh, update.sh, audit files)
+- **Context7-first library research**: `/plan` and `/research` try Context7 for specific library docs before falling back to WebSearch
+
+### Changed
+- **`/execute-task` restructured**: 12 sub-phases → 6 phases. Removed per-task tech-writer (inline docs are the agent's job, feature docs at /verify). Removed per-task WIP squash (deferred to /verify). Removed AC readiness check and TaskCreate ceremony
+- **`/verify` Phase 3**: Full code review → cross-task integration check. Individual code quality handled per-task
+- **`/verify` Phase 10**: Complex per-issue triage with auto-fix invocations → simplified issue report with suggested actions and batch bug filing. `/verify` no longer invokes `/fix` — verification is read-only
+- **`/verify` Phase 9.5**: Wrapper-only squash → all-mode feature squash using `git merge-base` instead of checkpoint commit search
+- **`/verify` Phase 3.3**: Tech-writer for feature-level docs (moved from per-task in execute-task)
+- **`/fix` Phase 4**: Direct code writing → agent delegation via shared assignment table. Added docs/ lookup for intended-behavior context. Added agent selection via `_agent-assignment.md`
+- **`/specify` Phase 2**: Removed 2-4 question limit. AI asks in rounds of up to 5, prioritized by impact, stops when enough for the spec
+- **`/plan` Phase 0**: Constitution guard moved before research (was inside output template — wasted research if constitution empty)
+- **`/plan` Signal Scan**: Tightened all 6 signals with "NOT a signal when already in project" qualifier
+- **`/research` Phase 2**: Expanded search scope to include `docs/` alongside source files
+- **`/summarize` Phase 2**: Reads `DEFAULT_BRANCH` from config, added wrapper mode source repo change gathering
+- **Recovery rollback**: Grep-based commit discovery → stored hash from wip.md with `git cat-file` validation
+- **Code review in `/fix` and `/refactor`**: Silent auto-fix on BLOCK → report to user with options (consistent with execute-task)
+- **WIP phase tracking**: Accurate transitions across all phases in execute-task, fix, and refactor
+- **Contract verification**: Grep for existence checks, Read for structural checks — clarified in breakdown and execute-task
+- **Constitution stub**: Setup wizard copies template with resolved headers instead of generating free-form text. Guarantees sentinel strings for guards
+- **Agent templates**: `JSDoc` → `Inline docs` in architect, frontend-engineer templates. TypeScript-specific checklist items replaced with `{{TYPE_SAFETY_RULES}}`
+- Template version: 1.24.1 → 1.25.0
+
+### Fixed
+- Recovery Phase 6 squash failure left unrecoverable WIP state
+- Session state lost critical context for late-stage tasks (completion notes now preserved in compaction)
+- Argument parsing edge cases (`1-feature-auth` misread as range, no error on invalid task numbers)
+- Auto-verify sometimes skipped (instruction buried in external file — added inline reminder)
+- Multi-task continuation Phase 8 step 2 wording caused confusion (explicit sub-steps)
+- `/verify` REJECTED verdict had no next-step guidance (now directs user to revise spec)
+
+### Removed
+- **`/clarify` command**: Redundant pre-specify step. Clarification absorbed into `/specify` Phase 2 with no question limit
+- **Per-task tech-writer** from execute-task: Agents write inline docs. Feature docs at `/verify` time
+- **Per-task WIP squash** from execute-task: WIP commits accumulate, squashed by `/verify`
+- **Chrome DevTools** from default `.mcp.json`: Conditional via setup wizard
+- Dead recovery branches for non-existent phases
+- Hardcoded TypeScript review items from 5 agent templates
+
 ## [1.24.1] - 2026-04-02
 
 ### Fixed
